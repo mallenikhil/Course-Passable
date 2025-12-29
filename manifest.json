@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Brightspace Grade Calculator",
+  "version": "1.0",
+  "description": "Enhanced grade viewing and what-if calculator for Brightspace",
+  "permissions": ["activeTab", "storage", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ]
+  
+}
