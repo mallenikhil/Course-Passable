@@ -3,7 +3,7 @@
 function getElementGrabber()
 {
     const container = document.querySelector('.d2l-table')
-    let course = {'assignments': [], 'grades': []};
+    let course = {};
     if(container)
     {
             
@@ -15,25 +15,29 @@ function getElementGrabber()
             const element = row.querySelectorAll('span');
             const titlesText = Array.from(titles).map(title => title.innerText);
             const elementText = Array.from(element).map(el => el.innerText);
-            course.assignments.push(titlesText);
-            course.grades.push(elementText);
+            course[titlesText[0]] = elementText;
         }
-        for(const row of course.grades)
-        {
-            for(const col of course.assignments)
-            {
-                console.log(col + ': ' + row);
-                continue;
-            }
-            continue;
-        }
-        // console.log(JSON.stringify(course));
+        console.log(JSON.stringify(course));
         return course;
     }
-    
-    return [];
+    return course;
 }
+
 getElementGrabber();
+function toString()
+{
+    const course = getElementGrabber();
+    const map = new Map();
+    for(const row of course.grades)
+    {
+        for(const col of course.assignments)
+        {
+            map.set(col, row);
+            continue;
+        }
+        continue;
+    }
+}
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'getElement') {
