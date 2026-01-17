@@ -1,9 +1,9 @@
 
-
+let course = {"courseName": document.title};
 function getElementGrabber()
 {
     const container = document.querySelector('.d2l-table')
-    let course = {};
+    course = {"courseName": document.title};
     if(container)
     {
             
@@ -17,31 +17,38 @@ function getElementGrabber()
             const elementText = Array.from(element).map(el => el.innerText);
             course[titlesText[0]] = elementText;
         }
-        console.log(JSON.stringify(course));
+        
+        if(chrome.storage.local.get(course).courseName === document.title)
+        {
+            chrome.storage.local.remove('courseData');
+        }
+        storeCourse(course);
         return course;
     }
     return course;
 }
 
-getElementGrabber();
-function toString()
+  
+function storeCourse(courseData)
 {
-    const course = getElementGrabber();
-    const map = new Map();
-    for(const row of course.grades)
-    {
-        for(const col of course.assignments)
-        {
-            map.set(col, row);
-            continue;
-        }
-        continue;
-    }
+    chrome.storage.local.set({[courseData.courseName]: courseData}, function() {
+        console.log('Course data stored successfully.');
+    });
 }
 
+async function getAllStorageItems() {
+  try {
+    const allItems = await chrome.storage.local.get(null);
+    console.log("All items in local storage:", allItems);
+  } catch (error) {
+    console.error("Error retrieving items from local storage:", error);
+  }
+}
+getElementGrabber();
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'getElement') {
         const result = getElementGrabber();
         sendResponse({result: result});
     }
 });
+
