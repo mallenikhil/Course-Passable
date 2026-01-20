@@ -1,4 +1,4 @@
-
+//Storage of all course data
 let course = {"courseName": document.title};
 function getElementGrabber()
 {
@@ -6,7 +6,13 @@ function getElementGrabber()
     course = {"courseName": document.title};
     if(container)
     {
-            
+
+        const tbody = container.querySelector('tbody');
+        const first = tbody.querySelector('tr');
+        // console.log(first);
+        
+        const ths = Array.from(first.querySelectorAll('th')).map(th => th.innerText.trim());
+        course['Order'] = ths;
         const rows = container.querySelectorAll('tr');
         const rowArray = Array.from(rows);
         for(const row of rowArray)
@@ -23,6 +29,7 @@ function getElementGrabber()
             chrome.storage.local.remove('courseData');
         }
         storeCourse(course);
+        console.log(course);
         return course;
     }
     return course;
@@ -44,6 +51,27 @@ async function getAllStorageItems() {
     console.error("Error retrieving items from local storage:", error);
   }
 }
+
+//Access the elements and change the data for calculation
+
+function acccessElements(data)
+{
+    let arr = data.Order;
+    let index;
+    for(let i = 0; i < arr.length; i++)
+    {
+        if(arr[i] === "Grade")
+        {
+            index = i;
+            break;
+        }
+    }  
+    index = index - 1;
+          
+    
+
+}
+
 getElementGrabber();
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'getElement') {
