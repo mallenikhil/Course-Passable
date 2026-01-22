@@ -54,7 +54,7 @@ async function getAllStorageItems() {
 
 //Access the elements and change the data for calculation
 
-function acccessElements(data)
+function calculateGrade(data)
 {
     let arr = data.Order;
     let index;
@@ -67,16 +67,61 @@ function acccessElements(data)
         }
     }  
     index = index - 1;
-          
+    let grade = 0;
+    let index2 = 0;;
+    for(dataKey in data)
+    {
+        for(let j = 0; j < data[dataKey].length; j++)
+        {
+            if(data[dataKey][j].includes("%"))
+            {
+                if(data[dataKey][j] !== "N/A" && data[dataKey][j] === "-%")
+                {
+                    data[dataKey][j] = 0;
+                    grade += parseFloat(data[dataKey][j]);
+                    index2 += 1;
+                }
+                else
+                {
+                    grade += parseFloat(data[dataKey][j].replace("%",""));
+                    index2 += 1;
+                }
+            }
+            
+            
+        }
+
+    }
+    console.log(grade);
+    grade = grade / index2;
+    console.log("Final Grade: " + grade);
+    return grade;
+    
+}
+
+function getGradeByPoint(data)
+{
+    let arr = data.Order;
+    for(let i = 0; i < arr.length; i++)
+    {
+        if(arr[i] === "Points")
+        {
+            index = i - 1;
+            break;
+        }
+    }
     
 
 }
 
+
+
 getElementGrabber();
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'getElement') {
-        const result = getElementGrabber();
-        sendResponse({result: result});
-    }
-});
+calculateGrade(course);
+// chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+//     if (request.action === 'getElement') {
+//         const result = getElementGrabber();
+//         sendResponse({result: result});
+//     }
+// });
 
