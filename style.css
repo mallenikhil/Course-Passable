@@ -16,3 +16,20 @@ h1{
     font-size: 18px;
     margin-bottom: 10px;
 }
+
+:root {
+    --color-1: #E85C41;
+    --color-2: #588BED;
+    --color-3: #9458ED;
+    --color-4: #F04DE5;
+    --color-5: #A1F04D;
+    --color-6: #F0E54D;
+    --color-7: #F09C4D;
+    --color-8: #F04D6E;
+    --color-9: #F0604D;
+    --color-10: #4DF078; 
+    --color-11: #734DF0;
+    --color-12: #361F1A;
+    --color-13: #030101;
+    --dynamic-color: var(--color-1);
+}
