@@ -1,5 +1,6 @@
-let types = [];
-let assignments = [];
+
+let assignments = {};
+let allAssignments = {};
 let totalWight = 0;
 let count = 1;
 function assignmentToForm(item, key) 
@@ -7,7 +8,24 @@ function assignmentToForm(item, key)
     let tbodyRef = document.getElementById('assignment').getElementsByTagName('tbody')[0];
     let row = tbodyRef.insertRow(-1);
     let assignmentTitle = row.insertCell(0);
-    assignmentTitle.style.c
+    assignmentTitle.classList.add('clickableAssignment');
+    assignmentTitle.addEventListener('click', () => {
+        document.querySelectorAll('.assignmentTypeButton').forEach(b => {
+            
+            if(b.classList.contains('active'))
+            {
+                assignmentTitle.style.backgroundColor = b.style.backgroundColor;
+                Object.values(assignments).forEach(a => {
+                    if(a.assignmentsList.has(key))
+                    {
+                        a.assignmentsList.delete(key);
+                    }
+                })
+                assignments[b.textContent].assignmentsList.add(key);
+            }
+        });
+    })
+    
     assignmentTitle.textContent = key;
     let pointCell = row.insertCell(1);
     if(item[0].includes("/"))
@@ -20,6 +38,17 @@ function assignmentToForm(item, key)
         input.value = earned;
         pointCell.appendChild(input);
         pointCell.appendChild(document.createTextNode(` / ${total}`));
+        let percentage;
+        let percentageSpan = document.createElement('span');
+        percentageSpan.textContent = `(${((earned / total) * 100).toFixed(2)}%)`;
+        input.addEventListener('input', () => {
+            const value = parseFloat(input.value) || 0;
+            percentage = ((parseFloat(value) / total) * 100).toFixed(2);
+            percentageSpan.textContent = `(${percentage}%)`;
+            allAssignments[key] = percentage;
+        });
+        pointCell.appendChild(percentageSpan);
+        console.log(allAssignments);
     }
     else 
     {
@@ -62,6 +91,7 @@ async function displayStoredData()
 function createAssignmentType()
 {
     let buttonPress = document.getElementById('createAssignmentType');
+   
     buttonPress.addEventListener('click', async () => {
         let assignmentType = document.getElementById('assignmentType').value;
         let weight = document.getElementById('weight').value;
@@ -74,7 +104,10 @@ function createAssignmentType()
             newBtn.style.backgroundColor = `var(--color-${count})`;
             parent.appendChild(newBtn);
             totalWight += parseFloat(weight);
-            types.push({[assignmentType]: weight});
+            assignments[assignmentType] = {
+                weight: parseFloat(weight),
+                assignmentsList: new Set()
+            };
             count++;
             
         }
@@ -89,6 +122,15 @@ function createAssignmentType()
 }
 createAssignmentType();
 displayStoredData();
+document.getElementById('types').addEventListener('click', (event) => {
+        const x = event.target.closest('.assignmentTypeButton');
+        if(!x) return;
+        document.querySelectorAll('.assignmentTypeButton').forEach(b => b.classList.remove('active'));
+        x.classList.add('active');
+});
+const calcGrade = document.getElementById('calculateGrade');
+calcGrade.addEventListener('click', () => {
 
+})
 // document.getElementById('getElement').addEventListener('click', getElement);
 

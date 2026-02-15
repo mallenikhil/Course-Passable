@@ -33,3 +33,10 @@ h1{
     --color-13: #030101;
     --dynamic-color: var(--color-1);
 }
+
+.clickableAssignment {
+    cursor: pointer;
+}
+.active {
+    border: 2px solid black;
+}
