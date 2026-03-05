@@ -9,7 +9,7 @@ function getElementGrabber()
 
         const tbody = container.querySelector('tbody');
         const first = tbody.querySelector('tr');
-        // console.log(first);
+        
         
         const ths = Array.from(first.querySelectorAll('th')).map(th => th.innerText.trim());
         course['Order'] = ths;
@@ -17,19 +17,26 @@ function getElementGrabber()
         const rowArray = Array.from(rows);
         for(const row of rowArray)
         {
+            let backround_color = window.getComputedStyle(row).getPropertyValue('backgroundColor');
+            
             const titles = row.querySelectorAll('label');
             const element = row.querySelectorAll('span');
             const titlesText = Array.from(titles).map(title => title.innerText);
             const elementText = Array.from(element).map(el => el.innerText);
             course[titlesText[0]] = elementText;
+            for (el of elementText) {
+                if (el === ("")) {
+                    elementText.splice(elementText.indexOf(el), 1);
+                }
+            }
+            console.log(elementText)
         }
-        
+    
         if(chrome.storage.local.get(course).courseName === document.title)
         {
             chrome.storage.local.remove('courseData');
         }
         storeCourse(course);
-        console.log(course);
         return course;
     }
     return course;
@@ -92,9 +99,7 @@ function calculateGrade(data)
         }
 
     }
-    console.log(grade);
     grade = grade / index2;
-    console.log("Final Grade: " + grade);
     return grade;
     
 }
