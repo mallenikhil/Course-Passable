@@ -23,8 +23,23 @@
       <tbody>
 
       </tbody>
-    </table>:
+    </table>
+    <button id="newAssignment">New Assignment</button>
+    <div id="modalOverlay" style="display: none;">
+      <div id = "assignmentModal">
+        <h3>New Assignment</h3>
+        <label>Assignment Name<input type="text" id="newAssignmentName" placeholder="e.g. Homework 3"></label>
+        <label>Total Points <input type="number" id="newAssignmentTotal" placeholder="e.g. 100"></label>
+        <label>Earned Points <input type="number" id="newAssignmentEarned" placeholder="e.g. 85"></label>
+        <div id="modalButtons">
+          <button id="submitAssignment">Submit</button>
+          <button id="cancelAssignment">Cancel</button>
+        </div>
+      </div>
+    </div>
+    
     <h2 id="finalGrade">Current Grade: --%</h2>
     <button id="calcGrade">Calculate Grade</button>
+
     <script src="popup.js"></script>
   </body>

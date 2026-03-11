@@ -181,8 +181,40 @@ function calculateGrade()
 
   return finalPercent;
 }
+
+function makeAssignment()
+{
+    document.getElementById('newAssignment').addEventListener('click', () => {
+        document.getElementById('newAssignmentName').value = '';
+        document.getElementById('newAssignmentTotal').value = '';
+        document.getElementById('newAssignmentEarned').value = '';
+        document.getElementById('modalOverlay').style.display = 'flex';
+    });
+    document.getElementById('cancelAssignment').addEventListener('click', () => {
+        document.getElementById('modalOverlay').style.display = 'none';
+    });
+    document.getElementById('submitAssignment').addEventListener('click', () => {
+        const name = document.getElementById('newAssignmentName').value;
+        const total = document.getElementById('newAssignmentTotal').value;
+        const earned = document.getElementById('newAssignmentEarned').value;
+        if (!name || isNaN(total) || isNaN(earned) || total <= 0) {
+            alert('Please enter valid assignment details.');
+            return;
+        }
+        assignmentToForm([`${earned}/${total}`], name);
+        allAssignments[name] = parseFloat(((earned / total) * 100).toFixed(2));
+        document.getElementById('modalOverlay').style.display = 'none';
+    });
+    document.getElementById('modalOverlay').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('modalOverlay')) {
+            document.getElementById('modalOverlay').style.display = 'none';
+        }
+    });
+}
+
 createAssignmentType();
 displayStoredData();
+makeAssignment();
 document.getElementById('types').addEventListener('click', (event) => {
         const x = event.target.closest('.assignmentTypeButton');
         if(!x) return;
