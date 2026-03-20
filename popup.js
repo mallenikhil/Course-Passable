@@ -11,20 +11,23 @@ async function saveGlobalState() {
             assignmentsList: Array.from(typeObj.assignmentsList)
         };
     }
-    await chrome.storage.local.set({
+    await chrome.storage.sync.set({
         _assignments: serialized,
-        _allAssignments: allAssignments,
         _totalWeight: totalWight,
         _count: count
+    });
+    await chrome.storage.local.set({
+        _allAssignments: allAssignments
     });
 }
 
 async function restoreGlobalState() {
-    const data = await chrome.storage.local.get(['_assignments', '_allAssignments', '_totalWeight', '_count']);
+    const syncData = await chrome.storage.sync.get(['_assignments', '_totalWeight', '_count']);
+    const localData = await chrome.storage.local.get(['_allAssignments']);
 
-    if (data._assignments) {
+    if (syncData._assignments) {
         assignments = {};
-        for (const [typeName, typeObj] of Object.entries(data._assignments)) {
+        for (const [typeName, typeObj] of Object.entries(syncData._assignments)) {
             assignments[typeName] = {
                 weight: parseFloat(typeObj.weight),
                 assignmentsList: new Set(Array.isArray(typeObj.assignmentsList) ? typeObj.assignmentsList : [])
@@ -32,15 +35,15 @@ async function restoreGlobalState() {
         }
     }
 
-    if (data._allAssignments) {
+    if (localData._allAssignments) {
         allAssignments = {};
-        for (const [key, val] of Object.entries(data._allAssignments)) {
+        for (const [key, val] of Object.entries(localData._allAssignments)) {
             allAssignments[key] = parseFloat(val);
         }
     }
 
-    if (data._totalWeight !== undefined) totalWight = parseFloat(data._totalWeight);
-    if (data._count !== undefined) count = parseInt(data._count);
+    if (syncData._totalWeight !== undefined) totalWight = parseFloat(syncData._totalWeight);
+    if (syncData._count !== undefined) count = parseInt(syncData._count);
 }
 
 function assignmentToForm(item, key) 
