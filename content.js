@@ -27,65 +27,76 @@ function letterGradeToPercentage(grade)
 function normalizeGradeValue(value)
 {
     if (!value || value === 'N/A' || value === '-' || value === '-%') return null;
-
     if (value.includes('/')) return value;
-
     if (value.includes('%')) {
         const num = parseFloat(value.replace('%', ''));
         if (!isNaN(num)) return value;
         return null;
     }
-
     const asLetter = letterGradeToPercentage(value);
     if (asLetter) return asLetter;
-
     return null;
 }
 
-function getElementGrabber()
+async function getElementGrabber()
 {
     const container = document.querySelector('.d2l-table');
+    if (!container) return course;
+
     course = {"courseName": document.title};
-    if (container)
+
+    const tbody = container.querySelector('tbody');
+    const first = tbody.querySelector('tr');
+
+    const ths = Array.from(first.querySelectorAll('th')).map(th => th.innerText.trim());
+    course['Order'] = ths;
+
+    const rows = container.querySelectorAll('tr');
+    for (const row of Array.from(rows))
     {
-        const tbody = container.querySelector('tbody');
-        const first = tbody.querySelector('tr');
+        const titles = row.querySelectorAll('label');
+        const element = row.querySelectorAll('span');
+        const titlesText = Array.from(titles).map(title => title.innerText.trim());
+        let elementText = Array.from(element).map(el => el.innerText.trim());
 
-        const ths = Array.from(first.querySelectorAll('th')).map(th => th.innerText.trim());
-        course['Order'] = ths;
+        elementText = elementText.filter(el => el !== '');
+        elementText = elementText.map(val => {
+            const normalized = normalizeGradeValue(val);
+            return normalized !== null ? normalized : val;
+        });
 
-        const rows = container.querySelectorAll('tr');
-        const rowArray = Array.from(rows);
-        for (const row of rowArray)
-        {
-            const titles = row.querySelectorAll('label');
-            const element = row.querySelectorAll('span');
-            const titlesText = Array.from(titles).map(title => title.innerText.trim());
-            let elementText = Array.from(element).map(el => el.innerText.trim());
-
-            elementText = elementText.filter(el => el !== '');
-
-            elementText = elementText.map(val => {
-                const normalized = normalizeGradeValue(val);
-                return normalized !== null ? normalized : val;
-            });
-
-            if (titlesText[0]) {
-                course[titlesText[0]] = elementText;
-            }
+        if (titlesText[0]) {
+            course[titlesText[0]] = elementText;
         }
-
-        storeCourse(course);
-        return course;
     }
+
+    await storeCourse(course);
     return course;
 }
 
-function storeCourse(courseData)
+async function storeCourse(courseData)
 {
-    chrome.storage.local.set({[courseData.courseName]: courseData}, function() {
-        console.log('Course data stored successfully.');
-    });
+    const existing = await chrome.storage.local.get(courseData.courseName);
+    const existingCourse = existing[courseData.courseName] || {};
+
+    const merged = {};
+    merged['courseName'] = courseData.courseName;
+    merged['Order'] = courseData.Order;
+
+    for (const key in courseData) {
+        if (key === 'courseName' || key === 'Order') continue;
+        merged[key] = courseData[key];
+    }
+
+    for (const key in existingCourse) {
+        if (key === 'courseName' || key === 'Order') continue;
+        if (!(key in merged)) {
+            merged[key] = existingCourse[key];
+        }
+    }
+
+    await chrome.storage.local.set({ [courseData.courseName]: merged });
+    console.log('Stored:', Object.keys(merged));
 }
 
 async function getAllStorageItems()
@@ -126,6 +137,7 @@ function calculateGrade(data)
 function getGradeByPoint(data)
 {
     let arr = data.Order;
+    let index;
     for (let i = 0; i < arr.length; i++)
     {
         if (arr[i] === "Points")
@@ -136,5 +148,11 @@ function getGradeByPoint(data)
     }
 }
 
-getElementGrabber();
-calculateGrade(course);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', async () => {
+        await getElementGrabber();
+        calculateGrade(course);
+    });
+} else {
+    getElementGrabber().then(() => calculateGrade(course));
+}

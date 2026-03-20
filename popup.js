@@ -3,7 +3,15 @@ let allAssignments = {};
 let totalWight = 0;
 let count = 1;
 
-async function saveGlobalState() {
+async function getCourseKey()
+{
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    return tab.title;
+}
+
+async function saveGlobalState()
+{
+    const courseName = await getCourseKey();
     const serialized = {};
     for (const [typeName, typeObj] of Object.entries(assignments)) {
         serialized[typeName] = {
@@ -12,41 +20,75 @@ async function saveGlobalState() {
         };
     }
     await chrome.storage.sync.set({
-        _assignments: serialized,
-        _totalWeight: totalWight,
-        _count: count
+        [`_assignments_${courseName}`]: serialized,
+        [`_totalWeight_${courseName}`]: totalWight,
+        [`_count_${courseName}`]: count
     });
     await chrome.storage.local.set({
-        _allAssignments: allAssignments
+        [`_allAssignments_${courseName}`]: allAssignments
     });
 }
 
-async function restoreGlobalState() {
-    const syncData = await chrome.storage.sync.get(['_assignments', '_totalWeight', '_count']);
-    const localData = await chrome.storage.local.get(['_allAssignments']);
+async function restoreGlobalState()
+{
+    const courseName = await getCourseKey();
+    const syncData = await chrome.storage.sync.get([
+        `_assignments_${courseName}`,
+        `_totalWeight_${courseName}`,
+        `_count_${courseName}`
+    ]);
+    const localData = await chrome.storage.local.get([`_allAssignments_${courseName}`]);
 
-    if (syncData._assignments) {
+    const savedAssignments = syncData[`_assignments_${courseName}`];
+    const savedTotalWeight = syncData[`_totalWeight_${courseName}`];
+    const savedCount = syncData[`_count_${courseName}`];
+    const savedAllAssignments = localData[`_allAssignments_${courseName}`];
+
+    if (savedAssignments) {
         assignments = {};
-        for (const [typeName, typeObj] of Object.entries(syncData._assignments)) {
+        for (const [typeName, typeObj] of Object.entries(savedAssignments)) {
             assignments[typeName] = {
                 weight: parseFloat(typeObj.weight),
                 assignmentsList: new Set(Array.isArray(typeObj.assignmentsList) ? typeObj.assignmentsList : [])
             };
         }
+    } else {
+        assignments = {};
     }
 
-    if (localData._allAssignments) {
+    if (savedAllAssignments) {
         allAssignments = {};
-        for (const [key, val] of Object.entries(localData._allAssignments)) {
+        for (const [key, val] of Object.entries(savedAllAssignments)) {
             allAssignments[key] = parseFloat(val);
         }
+    } else {
+        allAssignments = {};
     }
 
-    if (syncData._totalWeight !== undefined) totalWight = parseFloat(syncData._totalWeight);
-    if (syncData._count !== undefined) count = parseInt(syncData._count);
+    totalWight = savedTotalWeight !== undefined ? parseFloat(savedTotalWeight) : 0;
+    count = savedCount !== undefined ? parseInt(savedCount) : 1;
 }
 
-function assignmentToForm(item, key) 
+async function saveManualAssignments(courseName, name, earned, total)
+{
+    const data = await chrome.storage.local.get('_manualAssignments');
+    const manual = data._manualAssignments || {};
+    if (!manual[courseName]) manual[courseName] = {};
+    manual[courseName][name] = [`${earned}/${total}`];
+    await chrome.storage.local.set({ _manualAssignments: manual });
+}
+
+async function deleteManualAssignment(courseName, key)
+{
+    const data = await chrome.storage.local.get('_manualAssignments');
+    const manual = data._manualAssignments || {};
+    if (manual[courseName]) {
+        delete manual[courseName][key];
+        await chrome.storage.local.set({ _manualAssignments: manual });
+    }
+}
+
+function assignmentToForm(item, key)
 {
     let tbodyRef = document.getElementById('assignment').getElementsByTagName('tbody')[0];
     let row = tbodyRef.insertRow(-1);
@@ -116,8 +158,8 @@ function assignmentToForm(item, key)
             }
             pointCell.parentElement.remove();
             delete allAssignments[key];
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            const courseName = tab.title;
+            const courseName = await getCourseKey();
+            await deleteManualAssignment(courseName, key);
             const storedData = await chrome.storage.local.get(courseName);
             const courseData = storedData[courseName] || { courseName };
             delete courseData[key];
@@ -153,8 +195,8 @@ function assignmentToForm(item, key)
             }
             pointCell.parentElement.remove();
             delete allAssignments[key];
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            const courseName = tab.title;
+            const courseName = await getCourseKey();
+            await deleteManualAssignment(courseName, key);
             const storedData = await chrome.storage.local.get(courseName);
             const courseData = storedData[courseName] || { courseName };
             delete courseData[key];
@@ -167,46 +209,67 @@ function assignmentToForm(item, key)
     }
 }
 
-async function displayStoredData() 
+async function displayStoredData()
 {
     await restoreGlobalState();
-
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    const courseName = tab.title;
+    const courseName = await getCourseKey();
     try {
         const storedData = await chrome.storage.local.get(courseName);
+        const manualData = await chrome.storage.local.get('_manualAssignments');
+        const manual = manualData._manualAssignments?.[courseName] || {};
+
         document.getElementById('result').textContent += `${courseName}:\n`;
+
         if (storedData[courseName]) {
             const courseData = storedData[courseName];
-
             for (const key in courseData) {
                 if (key !== 'courseName' && key !== 'Order' && key !== 'undefined' && key !== '_categories') {
+                    if (key in manual) continue;
                     assignmentToForm(courseData[key], key);
-                }
-            }
-
-            for (const [typeName, typeObj] of Object.entries(assignments)) {
-                const parent = document.getElementById('types');
-                const newBtn = document.createElement('button');
-                newBtn.textContent = typeName;
-                newBtn.classList.add('assignmentTypeButton');
-                newBtn.style.backgroundColor = `var(--color-${count - Object.keys(assignments).length + Object.keys(assignments).indexOf(typeName)})`;
-                parent.appendChild(newBtn);
-            }
-
-            for (const [typeName, typeObj] of Object.entries(assignments)) {
-                const btn = Array.from(document.querySelectorAll('.assignmentTypeButton'))
-                    .find(b => b.textContent === typeName);
-                const color = btn ? getComputedStyle(btn).backgroundColor : 'transparent';
-                for (const assignKey of typeObj.assignmentsList) {
-                    document.querySelectorAll('.clickableAssignment').forEach(cell => {
-                        if (cell.textContent === assignKey) {
-                            cell.dataset.active = 'true';
-                            cell.dataset.savedCategory = typeName;
-                            cell.style.backgroundColor = color;
+                    const val = courseData[key][0];
+                    if (val && val.includes('/')) {
+                        const [earned, total] = val.split('/').map(Number);
+                        if (!isNaN(earned) && !isNaN(total) && total > 0) {
+                            allAssignments[key] = parseFloat((earned / total * 100).toFixed(2));
                         }
-                    });
+                    } else if (val && val.includes('%')) {
+                        const pct = parseFloat(val.replace('%', ''));
+                        if (!isNaN(pct)) allAssignments[key] = pct;
+                    }
                 }
+            }
+        }
+
+        for (const key in manual) {
+            assignmentToForm(manual[key], key);
+            const val = manual[key][0];
+            const [earned, total] = val.split('/').map(Number);
+            if (!isNaN(earned) && !isNaN(total) && total > 0) {
+                allAssignments[key] = parseFloat((earned / total * 100).toFixed(2));
+            }
+        }
+
+        for (const [typeName, typeObj] of Object.entries(assignments)) {
+            const parent = document.getElementById('types');
+            const newBtn = document.createElement('button');
+            newBtn.textContent = typeName;
+            newBtn.classList.add('assignmentTypeButton');
+            newBtn.style.backgroundColor = `var(--color-${count - Object.keys(assignments).length + Object.keys(assignments).indexOf(typeName)})`;
+            parent.appendChild(newBtn);
+        }
+
+        for (const [typeName, typeObj] of Object.entries(assignments)) {
+            const btn = Array.from(document.querySelectorAll('.assignmentTypeButton'))
+                .find(b => b.textContent === typeName);
+            const color = btn ? getComputedStyle(btn).backgroundColor : 'transparent';
+            for (const assignKey of typeObj.assignmentsList) {
+                document.querySelectorAll('.clickableAssignment').forEach(cell => {
+                    if (cell.textContent === assignKey) {
+                        cell.dataset.active = 'true';
+                        cell.dataset.savedCategory = typeName;
+                        cell.style.backgroundColor = color;
+                    }
+                });
             }
         }
     } catch (error) {
@@ -244,6 +307,7 @@ function createAssignmentType()
         totalWight = 0;
         count = 1;
         assignments = {};
+        allAssignments = {};
         document.querySelectorAll('.clickableAssignment').forEach(cell => {
             cell.style.backgroundColor = 'transparent';
             cell.dataset.disabled = 'false';
@@ -263,10 +327,10 @@ function calculateGrade()
         if (!typeObj || typeof typeObj !== "object") continue;
         if (typeof typeObj.weight !== "number") continue;
 
-        const list = typeObj.assignmentsList instanceof Set 
-            ? Array.from(typeObj.assignmentsList) 
-            : Array.isArray(typeObj.assignmentsList) 
-                ? typeObj.assignmentsList 
+        const list = typeObj.assignmentsList instanceof Set
+            ? Array.from(typeObj.assignmentsList)
+            : Array.isArray(typeObj.assignmentsList)
+                ? typeObj.assignmentsList
                 : [];
 
         const scores = [];
@@ -289,12 +353,14 @@ function calculateGrade()
     return finalPercent;
 }
 
-async function saveData() {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    const courseName = tab.title;
-
+async function saveData()
+{
+    const courseName = await getCourseKey();
     const storedData = await chrome.storage.local.get(courseName);
     const courseData = storedData[courseName] || { courseName };
+
+    const manualData = await chrome.storage.local.get('_manualAssignments');
+    const manual = manualData._manualAssignments?.[courseName] || {};
 
     const rows = document.getElementById('assignment').getElementsByTagName('tbody')[0].rows;
     for (const row of rows) {
@@ -303,15 +369,49 @@ async function saveData() {
         if (input) {
             const earned = input.value;
             const total = input.dataset.total;
-            courseData[key] = [`${earned}/${total}`];
+            if (key in manual) {
+                manual[key] = [`${earned}/${total}`];
+            } else {
+                courseData[key] = [`${earned}/${total}`];
+            }
         }
     }
 
     delete courseData['_categories'];
 
+    const updatedManual = manualData._manualAssignments || {};
+    updatedManual[courseName] = manual;
+
     await chrome.storage.local.set({ [courseName]: courseData });
+    await chrome.storage.local.set({ _manualAssignments: updatedManual });
     await saveGlobalState();
     alert('Saved!');
+}
+
+async function resetToPageData()
+{
+    if (!confirm('This will delete all manually added assignments and category changes. Are you sure?')) return;
+
+    const courseName = await getCourseKey();
+
+    const data = await chrome.storage.local.get('_manualAssignments');
+    const manual = data._manualAssignments || {};
+    delete manual[courseName];
+    await chrome.storage.local.set({ _manualAssignments: manual });
+
+    assignments = {};
+    allAssignments = {};
+    totalWight = 0;
+    count = 1;
+    await saveGlobalState();
+
+    document.getElementById('types').innerHTML = '';
+    const tbody = document.getElementById('assignment').getElementsByTagName('tbody')[0];
+    tbody.innerHTML = '';
+    document.getElementById('result').textContent = '';
+    document.getElementById('finalGrade').textContent = 'Current Grade: --%';
+
+    await displayStoredData();
 }
 
 function makeAssignment()
@@ -335,6 +435,8 @@ function makeAssignment()
         }
         assignmentToForm([`${earned}/${total}`], name);
         allAssignments[name] = parseFloat(((earned / total) * 100).toFixed(2));
+        const courseName = await getCourseKey();
+        await saveManualAssignments(courseName, name, earned, total);
         await saveGlobalState();
         document.getElementById('modalOverlay').style.display = 'none';
     });
@@ -358,3 +460,4 @@ document.getElementById('types').addEventListener('click', (event) => {
 
 document.getElementById("calcGrade").addEventListener("click", calculateGrade);
 document.getElementById('saveData').addEventListener('click', saveData);
+document.getElementById('resetToPage').addEventListener('click', resetToPageData);
