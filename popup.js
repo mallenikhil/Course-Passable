@@ -3,6 +3,74 @@ let allAssignments = {};
 let totalWight = 0;
 let count = 1;
 
+const SEMESTER_DATES = [
+    { month: 0, day: 4 },  
+    { month: 5, day: 20 },  // May 15 - Spring semester end
+    { month: 7, day: 18 },  // August 20 - Fall semester start
+    { month: 11, day: 2 }  // December 20 - Fall semester end
+];
+async function checkAndClearOldData()
+{
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentDay = now.getDate();
+    const currentYear = now.getFullYear();
+
+    const lastClearData = await chrome.storage.local.get('_lastClearDate');
+    const lastClear = lastClearData._lastClearDate || null;
+
+    let shouldClear = false;
+
+    for (const date of SEMESTER_DATES) {
+        const clearDate = new Date(currentYear, date.month, date.day);
+        if (
+            currentMonth === date.month &&
+            currentDay >= date.day &&
+            (!lastClear || new Date(lastClear) < clearDate)
+        ) {
+            shouldClear = true;
+            break;
+        }
+    }
+
+    if (shouldClear) {
+        await clearAllCourseData();
+        await chrome.storage.local.set({ _lastClearDate: now.toISOString() });
+        console.log('Semester reset performed:', now.toISOString());
+    }
+}
+async function clearAllCourseData()
+{
+    const allLocal = await chrome.storage.local.get(null);
+    const allSync = await chrome.storage.sync.get(null);
+
+    const localKeysToDelete = Object.keys(allLocal).filter(key =>
+        !key.startsWith('_')
+    );
+
+    const syncKeysToDelete = Object.keys(allSync).filter(key =>
+        key.startsWith('_assignments_') ||
+        key.startsWith('_totalWeight_') ||
+        key.startsWith('_count_')
+    );
+
+    const localKeysWithUnderscore = Object.keys(allLocal).filter(key =>
+        key.startsWith('_allAssignments_') ||
+        key === '_manualAssignments'
+    );
+
+    const allLocalKeysToDelete = [...localKeysToDelete, ...localKeysWithUnderscore];
+
+    if (allLocalKeysToDelete.length > 0) {
+        await chrome.storage.local.remove(allLocalKeysToDelete);
+    }
+    if (syncKeysToDelete.length > 0) {
+        await chrome.storage.sync.remove(syncKeysToDelete);
+    }
+
+    console.log('Cleared local keys:', allLocalKeysToDelete);
+    console.log('Cleared sync keys:', syncKeysToDelete);
+}
 async function getCourseKey()
 {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -446,10 +514,14 @@ function makeAssignment()
         }
     });
 }
-
-createAssignmentType();
-displayStoredData();
-makeAssignment();
+async function init()
+{
+    await checkAndClearOldData();
+    createAssignmentType();
+    await displayStoredData();
+    makeAssignment();
+}
+init();
 
 document.getElementById('types').addEventListener('click', (event) => {
     const x = event.target.closest('.assignmentTypeButton');
