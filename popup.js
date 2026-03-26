@@ -79,6 +79,20 @@ async function getCourseKey()
     return tab.title;
 }
 
+function getDisplayCourseName(fullCourseName)
+{
+    // Extract course name from format like "Grades - Spring 2026 ANTH 10000-017 LEC - Purdue University System:"
+    const dashParts = fullCourseName.split(' - ');
+    if (dashParts.length >= 2) {
+        // Get the part after the first dash and before the last dash
+        const coursePart = dashParts.slice(1, -1).join(' - ').trim();
+        if (coursePart) {
+            return coursePart;
+        }
+    }
+    return fullCourseName;
+}
+
 async function saveGlobalState()
 {
     const courseName = await getCourseKey();
@@ -318,7 +332,7 @@ async function displayStoredData()
         const manualData = await chrome.storage.local.get('_manualAssignments');
         const manual = manualData._manualAssignments?.[courseName] || {};
 
-        document.getElementById('result').textContent += `${courseName}:\n`;
+        document.getElementById('result').textContent += `${getDisplayCourseName(courseName)}:\n`;
 
         if (storedData[courseName]) {
             const courseData = storedData[courseName];
