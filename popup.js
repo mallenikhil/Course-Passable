@@ -3,6 +3,8 @@ let allAssignments = {};
 let totalWight = 0;
 let count = 1;
 
+
+
 const SEMESTER_DATES = [
     { month: 0, day: 4 },  
     { month: 5, day: 20 },  // May 15 - Spring semester end
@@ -218,7 +220,11 @@ function assignmentToForm(item, key)
         });
         pointCell.appendChild(percentageSpan);
         let deleteBtn = document.createElement('button');
-        deleteBtn.textContent = "Delete";
+        deleteBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: 20px; height: 20px;"><circle cx="50" cy="50" r="40" fill="#F44336"/><line x1="35" y1="35" x2="65" y2="65" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/><line x1="65" y1="35" x2="35" y2="65" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/></svg>';
+        deleteBtn.style.background = 'none';
+        deleteBtn.style.border = 'none';
+        deleteBtn.style.cursor = 'pointer';
+        deleteBtn.style.padding = '4px';
         deleteBtn.addEventListener('click', async () => {
             const savedCategory = assignmentTitle.dataset.savedCategory;
             if (savedCategory && assignments[savedCategory]) {
@@ -255,7 +261,11 @@ function assignmentToForm(item, key)
         });
         pointCell.appendChild(percentageSpan);
         let deleteBtn = document.createElement('button');
-        deleteBtn.textContent = "Delete";
+        deleteBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: 20px; height: 20px;"><circle cx="50" cy="50" r="40" fill="#F44336"/><line x1="35" y1="35" x2="65" y2="65" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/><line x1="65" y1="35" x2="35" y2="65" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/></svg>';
+        deleteBtn.style.background = 'none';
+        deleteBtn.style.border = 'none';
+        deleteBtn.style.cursor = 'pointer';
+        deleteBtn.style.padding = '4px';
         deleteBtn.addEventListener('click', async () => {
             const savedCategory = assignmentTitle.dataset.savedCategory;
             if (savedCategory && assignments[savedCategory]) {
@@ -274,6 +284,28 @@ function assignmentToForm(item, key)
         pointCell.appendChild(deleteBtn);
     } else {
         pointCell.textContent = t;
+        let deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: 20px; height: 20px;"><circle cx="50" cy="50" r="40" fill="#F44336"/><line x1="35" y1="35" x2="65" y2="65" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/><line x1="65" y1="35" x2="35" y2="65" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/></svg>';
+        deleteBtn.style.background = 'none';
+        deleteBtn.style.border = 'none';
+        deleteBtn.style.cursor = 'pointer';
+        deleteBtn.style.padding = '4px';
+        deleteBtn.addEventListener('click', async () => {
+            const savedCategory = assignmentTitle.dataset.savedCategory;
+            if (savedCategory && assignments[savedCategory]) {
+                assignments[savedCategory].assignmentsList.delete(key);
+            }
+            pointCell.parentElement.remove();
+            delete allAssignments[key];
+            const courseName = await getCourseKey();
+            await deleteManualAssignment(courseName, key);
+            const storedData = await chrome.storage.local.get(courseName);
+            const courseData = storedData[courseName] || { courseName };
+            delete courseData[key];
+            await chrome.storage.local.set({ [courseName]: courseData });
+            await saveGlobalState();
+        });
+        pointCell.appendChild(deleteBtn);
     }
 }
 
