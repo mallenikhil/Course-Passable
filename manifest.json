@@ -1,16 +1,22 @@
 {
   "manifest_version": 3,
-  "name": "Brightspace Grade Calculator",
+  "name": "Course Passable?",
   "version": "1.0",
   "description": "Enhanced grade viewing and what-if calculator for Brightspace",
-  "permissions": ["tabs", "activeTab", "storage", "scripting"],
-  "host_permissions": ["<all_urls>"],
+  "permissions": ["tabs", "activeTab", "storage", "declarativeContent"],
+  "host_permissions": ["https://purdue.brightspace.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html"
   },
+  "icons": {
+    "16": "images/icon16.png"
+  },
   "content_scripts": [
     {
-      "matches": ["*://*.brightspace.com/d2l/lms/grades/*"],
+      "matches": ["https://purdue.brightspace.com/d2l/lms/grades/*"],
       "js": ["content.js"],
       "run_at": "document_idle",
       "all_frames": false

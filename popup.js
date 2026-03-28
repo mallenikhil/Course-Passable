@@ -224,6 +224,7 @@ function assignmentToForm(item, key)
         let percentageSpan = document.createElement('span');
         const initialPct = ((earned / total) * 100);
         percentageSpan.textContent = `(${initialPct.toFixed(2)}%)`;
+        allAssignments[key] = parseFloat(initialPct.toFixed(2));
         input.addEventListener('input', async () => {
             const value = parseFloat(input.value) || 0;
             let pct = (value / total) * 100;
@@ -266,6 +267,7 @@ function assignmentToForm(item, key)
         pointCell.appendChild(input);
         let percentageSpan = document.createElement('span');
         percentageSpan.textContent = `(${initialPct.toFixed(2)}%)`;
+        allAssignments[key] = parseFloat(initialPct.toFixed(2));
         input.addEventListener('input', async () => {
             let pct = parseFloat(input.value) || 0;
             if (pct > 100) pct = 100;
@@ -298,6 +300,7 @@ function assignmentToForm(item, key)
         pointCell.appendChild(deleteBtn);
     } else {
         pointCell.textContent = t;
+        allAssignments[key] = 0;
         let deleteBtn = document.createElement('button');
         deleteBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: 20px; height: 20px;"><circle cx="50" cy="50" r="40" fill="#F44336"/><line x1="35" y1="35" x2="65" y2="65" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/><line x1="65" y1="35" x2="35" y2="65" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/></svg>';
         deleteBtn.style.background = 'none';
@@ -463,7 +466,20 @@ function calculateGrade()
     }
 
     const finalPercent = usedWeight > 0 ? (weightedTotal * (100 / usedWeight)) : 0;
-    document.getElementById("finalGrade").textContent = `Current Grade: ${finalPercent.toFixed(2)}%`;
+
+    console.debug('Grade calc', {
+        assignments,
+        allAssignments,
+        weightedTotal,
+        usedWeight,
+        finalPercent
+    });
+
+    document.getElementById('finalGrade').textContent =
+        usedWeight > 0
+            ? `Current Grade: ${finalPercent.toFixed(2)}%`
+            : 'Current Grade: --% (no weighted categories yet)';
+
     return finalPercent;
 }
 

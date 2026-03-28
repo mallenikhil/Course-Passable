@@ -8,8 +8,8 @@
   <body>
     <h1>Course Passable?</h1>
     <div>
-      <input type="text" id="assignmentType" placeholder="Catagory">
-      <input type="number" id ="weight" placeholder="Weight">
+      <input type="text" id="assignmentType" placeholder="Category" maxlength="25">
+      <input type="number" id ="weight" placeholder="Weight" maxlength="25">
       <button id="createAssignmentType">make type</button>
       <button id="clearStorage">clear types</button>
     </div>
@@ -28,7 +28,7 @@
     <div id="modalOverlay" style="display: none;">
       <div id = "assignmentModal">
         <h3>New Assignment</h3>
-        <label>Assignment Name<input type="text" id="newAssignmentName" placeholder="e.g. Homework 3"></label>
+        <label>Assignment Name<input type="text" id="newAssignmentName" placeholder="e.g. Homework 3" maxlength=""></label>
         <label>Total Points <input type="number" id="newAssignmentTotal" placeholder="e.g. 100"></label>
         <label>Earned Points <input type="number" id="newAssignmentEarned" placeholder="e.g. 85"></label>
         <div id="modalButtons">
