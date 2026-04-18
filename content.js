@@ -71,7 +71,9 @@ async function getElementGrabber()
     }
 
     await storeCourse(course);
+    
     return course;
+    
 }
 
 async function storeCourse(courseData)

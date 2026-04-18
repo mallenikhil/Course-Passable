@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Course Passable?",
-  "version": "1.0",
+  "version": "1.1",
   "description": "Enhanced grade viewing and what-if calculator for Brightspace",
-  "permissions": ["tabs", "activeTab", "storage", "declarativeContent"],
+  "permissions": ["activeTab", "storage", "declarativeContent"],
   "host_permissions": ["https://purdue.brightspace.com/*"],
   "background": {
     "service_worker": "background.js"

@@ -2,6 +2,7 @@ let assignments = {};
 let allAssignments = {};
 let totalWight = 0;
 let count = 1;
+let lastClickedIndex = -1;
 
 
 
@@ -172,36 +173,64 @@ async function deleteManualAssignment(courseName, key)
     }
 }
 
-function assignmentToForm(item, key)
+async function assignmentToForm(item, key)
 {
+    if (!item || item.length === 0) return;
+    
     let tbodyRef = document.getElementById('assignment').getElementsByTagName('tbody')[0];
     let row = tbodyRef.insertRow(-1);
     let assignmentTitle = row.insertCell(0);
     assignmentTitle.classList.add('clickableAssignment');
-    assignmentTitle.addEventListener('click', async () => {
-        const isOn = assignmentTitle.dataset.active === 'true';
-        if (isOn) {
-            assignmentTitle.dataset.active = 'false';
-            assignmentTitle.style.backgroundColor = 'transparent';
-            const savedCategory = assignmentTitle.dataset.savedCategory;
-            if (savedCategory && assignments[savedCategory]) {
-                assignments[savedCategory].assignmentsList.delete(key);
+    assignmentTitle.addEventListener('click', async (event) => {
+        const tbody = document.getElementById('assignment').getElementsByTagName('tbody')[0];
+        const currentIndex = row.rowIndex;
+        const activeButton = document.querySelector('.assignmentTypeButton.active');
+        if (!activeButton) return;
+
+        if (event.shiftKey && lastClickedIndex !== -1) {
+            // Shift-click: select range
+            const start = Math.min(lastClickedIndex, currentIndex);
+            const end = Math.max(lastClickedIndex, currentIndex);
+            for (let i = start; i <= end; i++) {
+                const targetRow = tbody.rows[i];
+                if (!targetRow) continue;
+                const targetCell = targetRow.cells[0];
+                const targetKey = targetCell.textContent;
+                targetCell.dataset.active = 'true';
+                targetCell.style.backgroundColor = getComputedStyle(activeButton).backgroundColor;
+                targetCell.dataset.savedCategory = activeButton.textContent;
+                Object.values(assignments).forEach(a => a.assignmentsList.delete(targetKey));
+                assignments[activeButton.textContent].assignmentsList.add(targetKey);
             }
         } else {
-            const activeButton = document.querySelector('.assignmentTypeButton.active');
-            if (!activeButton) return;
-            assignmentTitle.dataset.active = 'true';
-            assignmentTitle.style.backgroundColor = getComputedStyle(activeButton).backgroundColor;
-            assignmentTitle.dataset.savedCategory = activeButton.textContent;
-            Object.values(assignments).forEach(a => a.assignmentsList.delete(key));
-            assignments[activeButton.textContent].assignmentsList.add(key);
+            // Single click: toggle
+            const isOn = assignmentTitle.dataset.active === 'true';
+            if (isOn) {
+                assignmentTitle.dataset.active = 'false';
+                assignmentTitle.style.backgroundColor = 'transparent';
+                const savedCategory = assignmentTitle.dataset.savedCategory;
+                if (savedCategory && assignments[savedCategory]) {
+                    assignments[savedCategory].assignmentsList.delete(key);
+                }
+            } else {
+                assignmentTitle.dataset.active = 'true';
+                assignmentTitle.style.backgroundColor = getComputedStyle(activeButton).backgroundColor;
+                assignmentTitle.dataset.savedCategory = activeButton.textContent;
+                Object.values(assignments).forEach(a => a.assignmentsList.delete(key));
+                assignments[activeButton.textContent].assignmentsList.add(key);
+            }
         }
+        lastClickedIndex = currentIndex;
         await saveGlobalState();
     });
 
     assignmentTitle.textContent = key;
     let pointCell = row.insertCell(1);
-    let t = item[0];
+
+    // Some courses put the grade value in a different column index
+    // so find the first meaningful value (percent or points) in the array.
+    let t = item.find(v => typeof v === 'string' && (v.includes('/') || v.includes('%') || /^\d/.test(v.trim())));
+    if (!t) t = item.find(v => typeof v === 'string' && v.trim() !== '') || item[0];
 
     if (t.includes("/")) {
         const parts = t.split("/");
@@ -225,12 +254,15 @@ function assignmentToForm(item, key)
         const initialPct = ((earned / total) * 100);
         percentageSpan.textContent = `(${initialPct.toFixed(2)}%)`;
         allAssignments[key] = parseFloat(initialPct.toFixed(2));
+        await saveTableData();
+        await saveGlobalState();
         input.addEventListener('input', async () => {
             const value = parseFloat(input.value) || 0;
             let pct = (value / total) * 100;
             if (pct > 100) pct = 100;
             percentageSpan.textContent = `(${pct.toFixed(2)}%)`;
             allAssignments[key] = parseFloat(pct.toFixed(2));
+            await saveTableData();
             await saveGlobalState();
         });
         pointCell.appendChild(percentageSpan);
@@ -268,11 +300,14 @@ function assignmentToForm(item, key)
         let percentageSpan = document.createElement('span');
         percentageSpan.textContent = `(${initialPct.toFixed(2)}%)`;
         allAssignments[key] = parseFloat(initialPct.toFixed(2));
+        await saveTableData();
+        await saveGlobalState();
         input.addEventListener('input', async () => {
             let pct = parseFloat(input.value) || 0;
             if (pct > 100) pct = 100;
             percentageSpan.textContent = `(${pct.toFixed(2)}%)`;
             allAssignments[key] = parseFloat(pct.toFixed(2));
+            await saveTableData();
             await saveGlobalState();
         });
         pointCell.appendChild(percentageSpan);
@@ -329,6 +364,7 @@ function assignmentToForm(item, key)
 async function displayStoredData()
 {
     await restoreGlobalState();
+    updateTotalWeightLabel();
     const courseName = await getCourseKey();
     try {
         const storedData = await chrome.storage.local.get(courseName);
@@ -342,14 +378,14 @@ async function displayStoredData()
             for (const key in courseData) {
                 if (key !== 'courseName' && key !== 'Order' && key !== 'undefined' && key !== '_categories') {
                     if (key in manual) continue;
-                    assignmentToForm(courseData[key], key);
+                    await assignmentToForm(courseData[key], key);
                     const val = courseData[key][0];
-                    if (val && val.includes('/')) {
+                    if (val && typeof val === 'string' && val.includes('/')) {
                         const [earned, total] = val.split('/').map(Number);
                         if (!isNaN(earned) && !isNaN(total) && total > 0) {
                             allAssignments[key] = parseFloat((earned / total * 100).toFixed(2));
                         }
-                    } else if (val && val.includes('%')) {
+                    } else if (val && typeof val === 'string' && val.includes('%')) {
                         const pct = parseFloat(val.replace('%', ''));
                         if (!isNaN(pct)) allAssignments[key] = pct;
                     }
@@ -358,11 +394,13 @@ async function displayStoredData()
         }
 
         for (const key in manual) {
-            assignmentToForm(manual[key], key);
+            await assignmentToForm(manual[key], key);
             const val = manual[key][0];
-            const [earned, total] = val.split('/').map(Number);
-            if (!isNaN(earned) && !isNaN(total) && total > 0) {
-                allAssignments[key] = parseFloat((earned / total * 100).toFixed(2));
+            if (val && typeof val === 'string') {
+                const [earned, total] = val.split('/').map(Number);
+                if (!isNaN(earned) && !isNaN(total) && total > 0) {
+                    allAssignments[key] = parseFloat((earned / total * 100).toFixed(2));
+                }
             }
         }
 
@@ -389,31 +427,74 @@ async function displayStoredData()
                 });
             }
         }
+        console.log(assignments);
     } catch (error) {
         console.error("Error retrieving stored data:", error);
     }
 }
 
+function updateTotalWeightLabel() {
+    const label = document.getElementById('totalWeightLabel');
+    if (label) {
+        label.textContent = `Total weight: ${totalWight.toFixed(0)}%`;
+    }
+}
+
 function createAssignmentType()
 {
-    let buttonPress = document.getElementById('createAssignmentType');
-    buttonPress.addEventListener('click', async () => {
-        let assignmentType = document.getElementById('assignmentType').value;
-        let weight = document.getElementById('weight').value;
-        if (assignmentType && weight && totalWight + parseFloat(weight) <= 100 && !document.getElementById('types').textContent.includes(assignmentType)) {
-            const parent = document.getElementById('types');
-            const newBtn = document.createElement('button');
-            newBtn.textContent = assignmentType;
-            newBtn.classList.add('assignmentTypeButton');
-            newBtn.style.backgroundColor = `var(--color-${count})`;
-            parent.appendChild(newBtn);
-            totalWight += parseFloat(weight);
-            assignments[assignmentType] = {
-                weight: parseFloat(weight),
-                assignmentsList: new Set()
-            };
-            count++;
-            await saveGlobalState();
+    const modalOverlay = document.getElementById('typeModalOverlay');
+    const typeInput = document.getElementById('assignmentTypeModal');
+    const weightInput = document.getElementById('assignmentWeightModal');
+    const submitBtn = document.getElementById('submitAssignmentType');
+    const cancelBtn = document.getElementById('cancelAssignmentType');
+
+    document.getElementById('createAssignmentType').addEventListener('click', () => {
+        typeInput.value = '';
+        weightInput.value = '';
+        modalOverlay.style.display = 'flex';
+    });
+
+    submitBtn.addEventListener('click', async () => {
+        const assignmentType = typeInput.value.trim();
+        const weight = parseFloat(weightInput.value);
+        if (!assignmentType || Number.isNaN(weight) || weight <= 0) {
+            alert('Please enter a valid category name and weight.');
+            return;
+        }
+        if (totalWight + weight > 100) {
+            alert('Total weight cannot exceed 100%.');
+            return;
+        }
+        if (document.getElementById('types').textContent.includes(assignmentType)) {
+            alert('That category already exists.');
+            return;
+        }
+
+        const parent = document.getElementById('types');
+        const newBtn = document.createElement('button');
+        newBtn.textContent = assignmentType;
+        newBtn.classList.add('assignmentTypeButton');
+        newBtn.style.backgroundColor = `var(--color-${count})`;
+        parent.appendChild(newBtn);
+
+        totalWight += weight;
+        assignments[assignmentType] = {
+            weight,
+            assignmentsList: new Set()
+        };
+        count++;
+        await saveGlobalState();
+        updateTotalWeightLabel();
+        modalOverlay.style.display = 'none';
+    });
+
+    cancelBtn.addEventListener('click', () => {
+        modalOverlay.style.display = 'none';
+    });
+
+    modalOverlay.addEventListener('click', (event) => {
+        if (event.target === modalOverlay) {
+            modalOverlay.style.display = 'none';
         }
     });
 
@@ -424,7 +505,7 @@ function createAssignmentType()
         totalWight = 0;
         count = 1;
         assignments = {};
-        allAssignments = {};
+        lastClickedIndex = -1;
         document.querySelectorAll('.clickableAssignment').forEach(cell => {
             cell.style.backgroundColor = 'transparent';
             cell.dataset.disabled = 'false';
@@ -432,6 +513,7 @@ function createAssignmentType()
             cell.dataset.savedValue = '';
         });
         await saveGlobalState();
+        updateTotalWeightLabel();
     });
 }
 
@@ -483,7 +565,7 @@ function calculateGrade()
     return finalPercent;
 }
 
-async function saveData()
+async function saveTableData()
 {
     const courseName = await getCourseKey();
     const storedData = await chrome.storage.local.get(courseName);
@@ -514,6 +596,11 @@ async function saveData()
 
     await chrome.storage.local.set({ [courseName]: courseData });
     await chrome.storage.local.set({ _manualAssignments: updatedManual });
+}
+
+async function saveData()
+{
+    await saveTableData();
     await saveGlobalState();
     alert('Saved!');
 }
@@ -533,6 +620,7 @@ async function resetToPageData()
     allAssignments = {};
     totalWight = 0;
     count = 1;
+    lastClickedIndex = -1;
     await saveGlobalState();
 
     document.getElementById('types').innerHTML = '';
@@ -563,7 +651,7 @@ function makeAssignment()
             alert('Please enter valid assignment details.');
             return;
         }
-        assignmentToForm([`${earned}/${total}`], name);
+        await assignmentToForm([`${earned}/${total}`], name);
         allAssignments[name] = parseFloat(((earned / total) * 100).toFixed(2));
         const courseName = await getCourseKey();
         await saveManualAssignments(courseName, name, earned, total);
