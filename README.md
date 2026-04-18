@@ -61,7 +61,6 @@ background.js  → Controls when the extension icon is active
 | Permission | Reason |
 |---|---|
 | `storage` | Saves assignment data locally and syncs category weights across devices |
-| `tabs` | Identifies which Brightspace course page you are on |
 | `activeTab` | Accesses the current tab title to key data per course |
 | `declarativeContent` | Only enables the extension icon on Brightspace grade pages |
 | `host_permissions` | Allows the content script to read grade data from Brightspace |
