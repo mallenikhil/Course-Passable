@@ -34,6 +34,8 @@ const SEMESTER_DATES = [
     { month: 7, day: 18 },  // August 20 - Fall semester start
     { month: 11, day: 2 }  // December 20 - Fall semester end
 ];
+// Runs when the popup opens. If today is on or after a semester boundary date
+// (SEMESTER_DATES) and data has not been cleared since then, wipes all saved course data once.
 async function checkAndClearOldData()
 {
     const now = new Date();
@@ -64,6 +66,8 @@ async function checkAndClearOldData()
         console.log('Semester reset performed:', now.toISOString());
     }
 }
+// Removes every course's scraped grades, categories, deleted list, score edits and manual
+// assignments from local and sync storage. Other "_" keys (e.g. _lastClearDate) are kept.
 async function clearAllCourseData()
 {
     const allLocal = await chrome.storage.local.get(null);
@@ -98,6 +102,7 @@ async function clearAllCourseData()
     console.log('Cleared local keys:', allLocalKeysToDelete);
     console.log('Cleared sync keys:', syncKeysToDelete);
 }
+// Returns the active tab's title, which identifies the course in storage. Cached after the first lookup.
 async function getCourseKey()
 {
     if (courseName === null) {
@@ -107,6 +112,8 @@ async function getCourseKey()
     return courseName;
 }
 
+// Turns a Brightspace tab title into a readable course name, e.g.
+// "Grades - Spring 2026 ANTH 10000-017 LEC - Purdue University System" -> "Spring 2026 ANTH 10000-017 LEC".
 function getDisplayCourseName(fullCourseName)
 {
     // Extract course name from format like "Grades - Spring 2026 ANTH 10000-017 LEC - Purdue University System:"
@@ -123,6 +130,7 @@ function getDisplayCourseName(fullCourseName)
 
 // ---------- helpers ----------
 
+// Creates a DOM element with an optional class name and text content.
 function el(tag, className, text)
 {
     const node = document.createElement(tag);
@@ -131,6 +139,7 @@ function el(tag, className, text)
     return node;
 }
 
+// Creates an SVG element (which needs the SVG namespace) with the given attributes.
 function svgEl(tag, attrs = {})
 {
     const node = document.createElementNS(SVG_NS, tag);
@@ -138,26 +147,31 @@ function svgEl(tag, attrs = {})
     return node;
 }
 
+// Rounds a number to 2 decimal places.
 function round2(n)
 {
     return Math.round(n * 100) / 100;
 }
 
+// Formats a number for display without trailing zeros (25.00 -> "25").
 function fmt(n)
 {
     return String(round2(n));
 }
 
+// Maps a category's colorIndex to a CSS color variable, wrapping around after COLOR_COUNT colors.
 function colorVar(colorIndex)
 {
     return `var(--color-${((colorIndex - 1) % COLOR_COUNT) + 1})`;
 }
 
+// Sum of all category weights (the "allocated" part of the pie chart).
 function totalWeight()
 {
     return Object.values(assignments).reduce((sum, c) => sum + c.weight, 0);
 }
 
+// Returns the name of the category an assignment belongs to, or null if it is unassigned.
 function categoryOf(key)
 {
     for (const [name, obj] of Object.entries(assignments)) {
@@ -166,6 +180,7 @@ function categoryOf(key)
     return null;
 }
 
+// Moves assignments into a category, first removing them from any other category.
 function assignKeys(keys, category)
 {
     for (const key of keys) {
@@ -176,6 +191,7 @@ function assignKeys(keys, category)
 
 // ---------- persistence ----------
 
+// Saves this course's set of deleted (greyed-out) assignments to local storage.
 async function saveDeleted()
 {
     const name = await getCourseKey();
@@ -184,6 +200,8 @@ async function saveDeleted()
     });
 }
 
+// Saves categories (weight, color, assignments) and the color counter to sync storage,
+// and the deleted list to local storage.
 async function saveGlobalState()
 {
     const name = await getCourseKey();
@@ -202,6 +220,8 @@ async function saveGlobalState()
     await saveDeleted();
 }
 
+// Loads this course's categories and deleted list from storage into memory.
+// Categories saved before colorIndex existed get a color based on their position.
 async function restoreGlobalState()
 {
     const name = await getCourseKey();
@@ -235,6 +255,7 @@ async function restoreGlobalState()
     deletedAssignments = new Set(localData[`_deletedAssignments_${name}`] || []);
 }
 
+// Stores (or overwrites) a manually added assignment as "earned/total" under the given course.
 async function saveManualAssignments(name, assignmentName, earned, total)
 {
     const data = await chrome.storage.local.get('_manualAssignments');
@@ -244,6 +265,7 @@ async function saveManualAssignments(name, assignmentName, earned, total)
     await chrome.storage.local.set({ _manualAssignments: manual });
 }
 
+// Saves this course's score edits to local storage, or removes the key when there are none.
 async function saveScoreEdits()
 {
     const name = await getCourseKey();
@@ -276,7 +298,8 @@ async function persistScore(key)
 
 // ---------- loading ----------
 
-// Turns the stored array for one assignment into a row description.
+// Turns the stored array for one assignment into a row description:
+// { kind: "points" | "percent" | "text", earned, total } or null when there is no data.
 function parseItem(item)
 {
     if (!Array.isArray(item) || item.length === 0) return null;
@@ -299,12 +322,15 @@ function parseItem(item)
     return { kind: 'text', text: t };
 }
 
+// Score as a percentage, clamped to 0-100 and rounded to 2 places.
 function percentOf(info)
 {
     const pct = Math.min(100, Math.max(0, (info.earned / info.total) * 100));
     return parseFloat(pct.toFixed(2));
 }
 
+// Registers one assignment in rowData/rowOrder and records its percent score if it has a numeric one.
+// `base` is the original page value (used to detect edits); it is unset for manual assignments.
 function addRow(key, item, manual, base)
 {
     const info = parseItem(item);
@@ -316,6 +342,8 @@ function addRow(key, item, manual, base)
     if (info.kind !== 'text') allAssignments[key] = percentOf(info);
 }
 
+// Rebuilds all in-memory state from storage (categories, page assignments with score edits applied
+// on top, then manual assignments) and renders. Edits made against an older page value are discarded.
 async function loadData()
 {
     await restoreGlobalState();
@@ -366,12 +394,14 @@ async function loadData()
 
 // ---------- grade calculation ----------
 
+// Assignments in a category that still exist on the page and have not been deleted.
 function activeKeys(typeName)
 {
     return Array.from(assignments[typeName].assignmentsList)
         .filter(key => rowData[key] && !deletedAssignments.has(key));
 }
 
+// Item count and average percent for a category (avg is null when nothing in it has a score).
 function categoryStats(typeName)
 {
     const keys = activeKeys(typeName);
@@ -382,6 +412,9 @@ function categoryStats(typeName)
     return { count: keys.length, avg };
 }
 
+// Computes the course grade and writes it (plus an explanatory note) to the page. Only categories with
+// at least one scored assignment count, and their weights are rescaled to make up 100% of the grade,
+// so 50% + 25% is graded as 50/75 and 25/75. Returns the percentage.
 function calculateGrade()
 {
     let weightedSum = 0;
@@ -421,7 +454,8 @@ function calculateGrade()
     return finalPercent;
 }
 
-// Cheap update used while typing so inputs keep focus (no full re-render).
+// Cheap update used while typing so inputs keep focus (no full re-render):
+// refreshes each category's average and the overall grade.
 function refreshStats()
 {
     document.querySelectorAll('.catAvg').forEach(node => {
@@ -433,6 +467,7 @@ function refreshStats()
 
 // ---------- rendering ----------
 
+// Redraws the whole popup from the current state.
 function render()
 {
     if (!activeCategory || !assignments[activeCategory]) {
@@ -446,17 +481,20 @@ function render()
     calculateGrade();
 }
 
+// Shows the course name at the top of the popup.
 function renderHeader()
 {
     document.getElementById('result').textContent = getDisplayCourseName(courseName || '');
 }
 
+// Selects the category that clicked assignments are added to, and redraws.
 function setActiveCategory(name)
 {
     activeCategory = name;
     render();
 }
 
+// Draws the donut chart (one arc per category on a grey "unallocated" ring) and its legend.
 function renderWeightChart()
 {
     const chart = document.getElementById('weightChart');
@@ -530,6 +568,7 @@ function renderWeightChart()
     }
 }
 
+// Draws each category as a collapsible card listing its non-deleted assignments.
 function renderCategories()
 {
     const container = document.getElementById('categories');
@@ -586,6 +625,7 @@ function renderCategories()
     }
 }
 
+// Draws the assignments that have no category, plus the sticky "Add to" category selector.
 function renderUnassigned()
 {
     const header = document.getElementById('unassignedHeader');
@@ -626,6 +666,7 @@ function renderUnassigned()
     keys.forEach(key => list.appendChild(buildRow(key, 'unassigned')));
 }
 
+// Draws the collapsible list of deleted assignments (hidden when there are none).
 function renderDeleted()
 {
     const section = document.getElementById('deletedSection');
@@ -699,6 +740,8 @@ function buildRow(key, mode)
 
 // ---------- actions ----------
 
+// Clicking a row inside a category sends it back to Unassigned. Clicking an unassigned row adds it to the
+// active category; shift-click adds every unassigned row between the previous click and this one.
 async function handleRowClick(event, key, mode)
 {
     if (event.target.closest('input, button')) return;
@@ -728,6 +771,7 @@ async function handleRowClick(event, key, mode)
     await saveGlobalState();
 }
 
+// Greys out an assignment (excluding it from the grade) or restores it. Its data is kept.
 async function toggleDeleted(key)
 {
     if (deletedAssignments.has(key)) deletedAssignments.delete(key);
@@ -736,6 +780,7 @@ async function toggleDeleted(key)
     await saveDeleted();
 }
 
+// Deletes a category after confirming; its assignments go back to Unassigned.
 async function removeCategory(name)
 {
     if (!confirm(`Remove "${name}"? Its assignments will go back to Unassigned.`)) return;
@@ -746,6 +791,7 @@ async function removeCategory(name)
     await saveGlobalState();
 }
 
+// Scrolls the popup to the Unassigned section, if anything is still unassigned.
 function scrollToUnassigned()
 {
     const hasUnassigned = rowOrder.some(key => !deletedAssignments.has(key) && categoryOf(key) === null);
@@ -753,12 +799,15 @@ function scrollToUnassigned()
     document.getElementById('unassignedSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+// Shows how much weight is still available in the New Category dialog.
 function updateWeightRemaining()
 {
     const remaining = Math.max(0, 100 - totalWeight());
     document.getElementById('weightRemaining').textContent = `${fmt(remaining)}% of the grade is still unallocated`;
 }
 
+// Wires up the category controls: the New Category dialog (with its validation and limits),
+// the "Clear categories" button and the Deleted section toggle.
 function createAssignmentType()
 {
     const modalOverlay = document.getElementById('typeModalOverlay');
@@ -843,6 +892,8 @@ function createAssignmentType()
     });
 }
 
+// After confirming, restores the popup to what Brightspace shows: drops manual assignments,
+// score edits, categories and deleted assignments.
 async function resetToPageData()
 {
     if (!confirm('This will delete all manually added assignments, categories and deleted assignments, and restore any scores you changed. Are you sure?')) return;
@@ -869,6 +920,8 @@ async function resetToPageData()
     await loadData();
 }
 
+// Wires up the New Assignment dialog: validates the name/points limits and adds the result
+// as a manual assignment.
 function makeAssignment()
 {
     const overlay = document.getElementById('modalOverlay');
@@ -922,6 +975,7 @@ function makeAssignment()
     });
 }
 
+// Entry point: runs the semester cleanup, wires up the dialogs, then loads and renders the data.
 async function init()
 {
     await checkAndClearOldData();

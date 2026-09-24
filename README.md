@@ -5,10 +5,15 @@ A Chrome extension for Purdue University students that automatically reads your 
 ## Features
 
 - Automatically pulls assignment scores from Brightspace
-- Create weighted grade categories (Homework, Exams, Labs, etc.)
+- Create weighted grade categories (Homework, Exams, Labs, etc.) and see them on a pie chart, including how much of the grade is still unallocated
+- Each category is a dropdown that lists the assignments inside it, with its average and item count
+- After you create a category, the popup jumps to the assignments that still need one
+- Your grade updates live as you change scores, categories or weights
+- Weights that don't add up to 100% still work: the categories you have are rescaled to make up the whole grade (50% + 25% is graded as 50/75 and 25/75)
+- Edit any score to see a "what if" grade, then reset back to the real scores
+- Delete an assignment to grey it out and exclude it from your grade, and restore it any time
 - Add hypothetical assignments to see how future grades affect your final score
-- Calculate your current weighted grade instantly
-- Saves category setup per course so you never have to redo it
+- Saves your setup per course so you never have to redo it
 - Syncs grade categories across devices via Google account
 - Manually added assignments are preserved when Brightspace updates
 - Extension icon only appears on Brightspace grade pages
@@ -19,12 +24,14 @@ A Chrome extension for Purdue University students that automatically reads your 
 ### From Source
 1. Clone the repository
 ```bash
-   git clone https://github.com/yourusername/course-passable.git
+   git clone https://github.com/mallenikhil/BrightSpaceDisp.git
 ```
 2. Open Chrome and navigate to `chrome://extensions/`
 3. Enable **Developer Mode** in the top right corner
 4. Click **Load unpacked**
 5. Select the cloned repository folder
+
+After pulling new changes, click the reload icon on the extension's card in `chrome://extensions/`.
 
 ### From Chrome Web Store
 > Coming soon
@@ -33,27 +40,48 @@ A Chrome extension for Purdue University students that automatically reads your 
 
 1. Navigate to your Brightspace grades page at `purdue.brightspace.com/d2l/lms/grades/`
 2. Click the **Course Passable?** icon in your Chrome toolbar
-3. Create grade categories by entering a name and weight percentage; the pie chart shows how much of the grade is allocated
+3. Click **+ New category** and enter a name and weight percentage. The pie chart shows how much of the grade is allocated
    - Example: `Homework` → `20%`, `Midterm` → `30%`, `Final` → `50%`
-4. After creating a category the popup scrolls to your unassigned assignments. Click a row to add it to the selected category (shift-click selects a range). Expand a category to see what's inside it
-5. Your current grade updates automatically. If your weights don't add up to 100% (say 50% + 25%), they are rescaled so the categories you have make up 100% of the grade
-6. Use the red **×** in the top-left corner of an assignment to delete it. It's greyed out (and ignored in your grade) until you restore it with **↺**
-7. Use **New Assignment** (top of the popup) to add hypothetical future assignments (names up to 40 characters, points up to 100,000, up to 100 per course)
-8. Changes save automatically. Click **Reset to Page Data** (next to New Assignment) to restore the scores from Brightspace and clear categories, deleted and added assignments
+4. The popup scrolls to your **Unassigned** assignments. Click a row to add it to the selected category (shift-click selects a range). Use the **Add to** dropdown to switch categories, and expand a category to see what's inside it. Click an assignment inside a category to send it back to Unassigned
+5. Your current grade updates automatically. The note under it shows how much of the course weight it is based on
+6. Change any score to try out a "what if" grade
+7. Use the red **×** in the top-left corner of an assignment to delete it. It's greyed out in the **Deleted** section (and ignored in your grade) until you restore it with **↺**
+8. Use **+ New Assignment** (top of the popup) to add hypothetical future assignments
+9. Changes save automatically. Click **Reset to Page Data** (next to New Assignment) to restore the scores from Brightspace and clear categories, deleted assignments and added assignments
+
+### Input limits
+
+To keep the extension's storage small:
+
+| Item | Limit |
+|---|---|
+| Assignment name | 40 characters |
+| Points (total and earned) | Up to 100,000, earned can't exceed total, 2 decimal places |
+| Added assignments | 100 per course |
+| Category name | 25 characters |
+| Categories | 20 per course, weights can't total more than 100% |
 
 ## How It Works
 
-The extension uses a content script that runs exclusively on Brightspace grade pages. It reads your assignment data from the gradebook table and stores it locally. The popup lets you organize assignments into weighted categories and calculate your grade based on those weights.
+The extension uses a content script that runs exclusively on Brightspace grade pages. It reads your assignment data from the gradebook table and stores it locally. The popup lets you organize assignments into weighted categories and calculates your grade based on those weights.
+
+Only categories that contain at least one scored assignment count towards the grade. Their weights are rescaled so they add up to 100%, and each category's score is the average of its (non-deleted) assignments.
+
+Score edits are stored separately from the values scraped from Brightspace, so **Reset to Page Data** can always restore the originals. If Brightspace later posts a different grade for an assignment you edited, your old edit is dropped.
+
 ```
+manifest.json  → Extension configuration, permissions and content script match rules
 content.js     → Scrapes grade data from Brightspace and saves to chrome.storage.local
-popup.js       → UI for organizing assignments and calculating grades
+popup.html     → Layout of the popup
+popup.js       → Popup logic: categories, pie chart, assignment lists, grade calculation
+style.css      → Popup styling
 background.js  → Controls when the extension icon is active
 ```
 
 ## Data & Privacy
 
-- All data is stored locally on your device via `chrome.storage.local`
-- Grade category weights sync across your devices via `chrome.storage.sync`
+- Scraped grades, deleted assignments, score edits and manually added assignments are stored locally on your device via `chrome.storage.local`
+- Grade categories (names, weights, and which assignments they contain) sync across your devices via `chrome.storage.sync`
 - No data is ever sent to any external server
 - Data is automatically cleared at semester boundaries to keep storage clean
 

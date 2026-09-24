@@ -1,3 +1,5 @@
+// On install: disable the toolbar icon everywhere, then enable it only on
+// purdue.brightspace.com/d2l/lms/grades/ pages.
 chrome.runtime.onInstalled.addListener(() => {
   chrome.action.disable();
 

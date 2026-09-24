@@ -1,5 +1,7 @@
 let course = {"courseName": document.title};
 
+// Converts a letter grade (A+ ... F) to an approximate percentage string like "95%",
+// or null if the text is not a letter grade.
 function letterGradeToPercentage(grade)
 {
     const gradeMap = {
@@ -24,6 +26,8 @@ function letterGradeToPercentage(grade)
     return null;
 }
 
+// Cleans one scraped cell: ignores empty/placeholder values, keeps "x/y" points and percentages,
+// and converts letter grades. Returns null if the value is unusable.
 function normalizeGradeValue(value)
 {
     if (!value || value === 'N/A' || value === '-' || value === '-%') return null;
@@ -38,6 +42,8 @@ function normalizeGradeValue(value)
     return null;
 }
 
+// Scrapes the gradebook table (.d2l-table) into { courseName, Order, <assignment>: [values...] },
+// stores it, and returns it.
 async function getElementGrabber()
 {
     const container = document.querySelector('.d2l-table');
@@ -76,6 +82,8 @@ async function getElementGrabber()
     
 }
 
+// Saves the scraped data to chrome.storage.local keyed by the page title.
+// Assignments saved earlier that are missing from this scrape are kept.
 async function storeCourse(courseData)
 {
     const existing = await chrome.storage.local.get(courseData.courseName);
@@ -101,6 +109,7 @@ async function storeCourse(courseData)
     console.log('Stored:', Object.keys(merged));
 }
 
+// Debug helper: logs everything in local storage. Not called anywhere at the moment.
 async function getAllStorageItems()
 {
     try {
@@ -111,6 +120,8 @@ async function getAllStorageItems()
     }
 }
 
+// Averages every percentage found in the scraped data. The result is not used at the moment;
+// the popup does its own weighted calculation.
 function calculateGrade(data)
 {
     let grade = 0;
@@ -136,6 +147,7 @@ function calculateGrade(data)
     return grade;
 }
 
+// Unfinished helper: finds the column before "Points" in the table order but does not return or use it.
 function getGradeByPoint(data)
 {
     let arr = data.Order;
