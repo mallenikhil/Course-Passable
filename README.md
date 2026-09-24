@@ -33,12 +33,13 @@ A Chrome extension for Purdue University students that automatically reads your 
 
 1. Navigate to your Brightspace grades page at `purdue.brightspace.com/d2l/lms/grades/`
 2. Click the **Course Passable?** icon in your Chrome toolbar
-3. Create grade categories by entering a name and weight percentage
+3. Create grade categories by entering a name and weight percentage; the pie chart shows how much of the grade is allocated
    - Example: `Homework` → `20%`, `Midterm` → `30%`, `Final` → `50%`
-4. Click on assignment rows to assign them to a category
-5. Click **Calculate Grade** to see your current weighted grade
-6. Use **New Assignment** to add hypothetical future assignments
-7. Click **Save** to preserve any changes you make to scores
+4. After creating a category the popup scrolls to your unassigned assignments. Click a row to add it to the selected category (shift-click selects a range). Expand a category to see what's inside it
+5. Your current grade updates automatically. If your weights don't add up to 100% (say 50% + 25%), they are rescaled so the categories you have make up 100% of the grade
+6. Use the red **×** in the top-left corner of an assignment to delete it. It's greyed out (and ignored in your grade) until you restore it with **↺**
+7. Use **New Assignment** (top of the popup) to add hypothetical future assignments (names up to 40 characters, points up to 100,000, up to 100 per course)
+8. Changes save automatically. Click **Reset to Page Data** (next to New Assignment) to restore the scores from Brightspace and clear categories, deleted and added assignments
 
 ## How It Works
 

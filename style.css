@@ -1,28 +1,3 @@
-body {
-    width: 410px; /* Slightly wider to accommodate tables */
-    margin: 0;
-    padding: 16px;
-    background-color: var(--bg);
-    font-family: 'Segoe UI', Roboto, sans-serif;
-    color: var(--text);
-}
-#result {
-    margin-top: 10px;
-    padding: 10px;
-    background: #f0f0f0;
-    border-radius: 4px;
-    max-height: 200px;
-    overflow-y: auto;
-    white-space: pre-wrap;
-}
-h1{
-    font-size: 1.2rem;
-    margin-top: 0;
-    color: var(--primary);
-    border-bottom: 2px solid var(--primary);
-    padding-bottom: 8px;
-}
-
 :root {
     --color-1: #E85C41;
     --color-2: #588BED;
@@ -33,11 +8,10 @@ h1{
     --color-7: #F09C4D;
     --color-8: #F04D6E;
     --color-9: #F0604D;
-    --color-10: #4DF078; 
+    --color-10: #4DF078;
     --color-11: #734DF0;
     --color-12: #361F1A;
     --color-13: #030101;
-    --dynamic-color: var(--color-1);
     --primary: #006fbf; /* Brightspace-ish Blue */
     --accent: #ffba52;  /* Warning/Gold accent */
     --bg: #f4f5f7;
@@ -45,224 +19,33 @@ h1{
     --text: #202124;
     --text-light: #5f6368;
     --border: #dcdfe3;
+    --danger: #e53935;
     --radius: 8px;
     --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-.clickableAssignment {
-    cursor: pointer;
-}
-.active {
-    border: 2px solid black;
-}
-
-#modalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex; /* Triggered by JS */
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(2px);
+body {
+    width: 410px; /* Slightly wider to accommodate tables */
+    margin: 0;
+    padding: 16px;
+    background-color: var(--bg);
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    color: var(--text);
 }
 
-#assignmentModal {
-  background: var(--card-bg);
-  padding: 20px;
-  border-radius: var(--radius);
-  width: 80%;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+[hidden] {
+    display: none !important;
 }
 
-#assignmentModal h3,
-#typeModal h3 {
-  margin: 0 0 4px 0;
-}
-
-#typeModalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(2px);
-}
-
-#typeModal {
-  background: var(--card-bg);
-  padding: 20px;
-  border-radius: var(--radius);
-  width: 80%;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-}
-
-#typeModal label {
-  display: block;
-  font-size: 12px;
-  color: var(--text-light);
-  margin-bottom: 12px;
-}
-
-#typeModal input {
-  width: 100%;
-  display: block;
-  margin-top: 4px;
-  padding: 8px;
-  box-sizing: border-box;
-}
-
-#typeModalButtons {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-#totalWeightLabel {
-  align-self: center;
-  margin-left: 8px;
-  font-weight: 600;
-}
-
-#assignmentModal label {
-  display: block;
-  font-size: 12px;
-  color: var(--text-light);
-  margin-bottom: 12px;
-}
-
-#assignmentModal input {
-  width: 100%;
-  display: block;
-  margin-top: 4px;
-  padding: 8px;
-  box-sizing: border-box;
-}
-
-#modalButtons {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-body > div:first-of-type {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 8px;
-  justify-content: center;
-  margin-bottom: 16px;
-}
-
-body > div:first-of-type input {
-  flex: 0.5;
-  min-width: 60px;
-  padding: 8px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-}
-
-body > div:first-of-type button {
-  padding: 8px 12px;
-  flex-shrink: 0;
-}
-
-#types {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  margin: 12px 0;
-}
-
-#types button {
-  padding: 8px 12px;
-}
-
-div > input {
-  padding: 8px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  margin-bottom: 8px;
-  width: calc(50% - 12px); /* Side by side */
-}
-
-button {
-  cursor: pointer;
-  padding: 8px 12px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: var(--card-bg);
-  transition: all 0.2s;
-  font-weight: 500;
-}
-
-button:hover {
-  background: #f0f0f0;
-}
-
-#createAssignmentType {
-  background-color: var(--primary);
-  color: white;
-  border: none;
-}
-
-#clearStorage {
-  color: #d93025; /* Error Red */
-  border-color: #fce8e6;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 16px 0;
-  background: var(--card-bg);
-  border-radius: var(--radius);
-  overflow: hidden; /* Clips corners */
-  box-shadow: var(--shadow);
-}
-
-td, th {
-  padding: 10px;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  font-size: 13px;
-}
-tr:last-child td {
-  border-bottom: none;
-}
-
-#finalGrade {
-  text-align: center;
-  background: var(--primary);
-  color: white;
-  padding: 12px;
-  border-radius: var(--radius);
-  font-size: 1.4rem;
-}
-
-.buttonGroup {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
-  justify-content: center;
-}
-
-.buttonGroup button {
-  flex: 1;
-  min-width: 120px;
+h1 {
+    font-size: 1.2rem;
+    margin-top: 0;
+    color: var(--primary);
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 8px;
 }
 
 #result {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     font-size: 14px;
     font-weight: 500;
     letter-spacing: 0.03em;
@@ -270,5 +53,480 @@ tr:last-child td {
     text-transform: uppercase;
     padding: 6px 0;
     border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 12px;
+}
+
+button {
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+button:hover {
+    background: #f0f0f0;
+}
+
+.hint {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.emptyHint {
+    font-size: 12px;
+    font-style: italic;
+    color: var(--text-light);
+    padding: 6px 2px;
+}
+
+.dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* ---------- weight chart ---------- */
+
+#weightsCard {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 12px;
+}
+
+.chartWrap {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+#weightChart {
+    flex-shrink: 0;
+    width: 120px;
+    height: 120px;
+}
+
+.chartPct {
+    font-size: 19px;
+    font-weight: 700;
+    fill: var(--text);
+}
+
+.chartLabel {
+    font-size: 8px;
+    fill: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+#legend {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 130px;
+    overflow-y: auto;
+}
+
+.legendChip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 3px 6px;
+    font-size: 12px;
+    text-align: left;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 6px;
+}
+
+.legendChip.active {
+    border-color: var(--primary);
+    background: #eef6fc;
+}
+
+.legendChip.static {
+    cursor: default;
+    color: var(--text-light);
+}
+
+.legendChip.static:hover {
+    background: none;
+}
+
+.legendName {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.legendWeight {
+    font-weight: 600;
+}
+
+.top-controls {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.top-controls button {
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+#createAssignmentType {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+}
+
+#createAssignmentType:hover {
+    background-color: #005a9c;
+}
+
+#clearStorage {
+    color: #d93025; /* Error Red */
+    border-color: #fce8e6;
+}
+
+/* ---------- grade ---------- */
+
+#gradeBox {
+    text-align: center;
+    background: var(--primary);
+    color: white;
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    margin: 12px 0;
+}
+
+#finalGrade {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+#gradeNote {
+    margin-top: 4px;
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+/* ---------- category dropdowns ---------- */
+
+.category {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-left: 5px solid var(--cat-color);
+    border-radius: var(--radius);
     margin-bottom: 8px;
+}
+
+.category.active {
+    box-shadow: 0 0 0 2px var(--primary);
+}
+
+.categoryHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.chevron {
+    font-size: 10px;
+    color: var(--text-light);
+    transition: transform 0.15s;
+}
+
+.category.open .chevron,
+.chevron.openChevron {
+    transform: rotate(90deg);
+}
+
+.catName {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.catWeight {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.catStats {
+    font-size: 11px;
+    color: var(--text-light);
+    white-space: nowrap;
+}
+
+.catRemove {
+    padding: 0 6px;
+    border: none;
+    background: none;
+    color: var(--text-light);
+    font-size: 13px;
+}
+
+.catRemove:hover {
+    color: var(--danger);
+    background: none;
+}
+
+.categoryBody {
+    display: none;
+    padding: 4px 12px 12px;
+}
+
+.category.open .categoryBody {
+    display: block;
+}
+
+/* ---------- assignment rows ---------- */
+
+.sectionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 0;
+    margin-top: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+}
+
+.sectionHeader.clickable {
+    cursor: pointer;
+    user-select: none;
+    color: var(--text-light);
+}
+
+#unassignedHeader {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--bg);
+}
+
+.assignTo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-light);
+}
+
+.assignTo select {
+    max-width: 170px;
+    padding: 3px 4px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+.rowList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 10px;
+}
+
+.assignmentRow {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px 7px 16px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+
+.assignmentRow.clickable {
+    cursor: pointer;
+}
+
+.assignmentRow.clickable:hover {
+    background: #f4f9fd;
+}
+
+.rowTitle {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    word-break: break-word;
+}
+
+.rowScore {
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.rowScore.muted {
+    color: var(--text-light);
+}
+
+.rowScore input {
+    width: 54px;
+    padding: 3px 4px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.pct {
+    color: var(--text-light);
+}
+
+/* Delete button pinned to the top-left corner of each assignment */
+.cornerBtn {
+    position: absolute;
+    top: -7px;
+    left: -7px;
+    z-index: 1;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--danger);
+    color: white;
+    font-size: 13px;
+    line-height: 18px;
+    text-align: center;
+}
+
+.cornerBtn:hover {
+    background: #b71c1c;
+}
+
+.cornerBtn.restore {
+    background: #2e7d32;
+}
+
+.cornerBtn.restore:hover {
+    background: #1b5e20;
+}
+
+/* Deleted assignments stay visible but greyed out */
+.assignmentRow.deleted {
+    background: #ececec;
+    border-style: dashed;
+}
+
+.assignmentRow.deleted .rowTitle {
+    text-decoration: line-through;
+}
+
+.assignmentRow.deleted .rowTitle,
+.assignmentRow.deleted .rowScore {
+    opacity: 0.5;
+}
+
+/* ---------- bottom buttons ---------- */
+
+.topActions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+#newAssignment {
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 14px;
+    background: var(--primary);
+    color: white;
+    border: none;
+}
+
+#newAssignment:hover {
+    background: #005a9c;
+}
+
+#resetToPage {
+    flex-shrink: 0;
+    font-size: 13px;
+    color: #d93025;
+    border-color: #f3c6c2;
+}
+
+/* ---------- modals ---------- */
+
+#modalOverlay,
+#typeModalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex; /* Triggered by JS */
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+    z-index: 10;
+}
+
+#assignmentModal,
+#typeModal {
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: var(--radius);
+    width: 80%;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+#assignmentModal h3,
+#typeModal h3 {
+    margin: 0 0 4px 0;
+}
+
+#assignmentModal label,
+#typeModal label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-light);
+    margin-bottom: 12px;
+}
+
+#assignmentModal input,
+#typeModal input {
+    width: 100%;
+    display: block;
+    margin-top: 4px;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+#weightRemaining {
+    margin-bottom: 8px;
+}
+
+#modalButtons,
+#typeModalButtons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 4px;
 }

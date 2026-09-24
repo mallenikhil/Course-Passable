@@ -2,34 +2,52 @@
 <html>
   <head>
     <title>Course Passable?</title>
-    
+
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
     <h1>Course Passable?</h1>
-    <div class="top-controls">
-      <button type="button" id="createAssignmentType">New category</button>
-      <span id="totalWeightLabel">Total weight: 0%</span>
-      <button type="button" id="clearStorage">clear types</button>
-    </div>
-    <div id="types">
-
-    </div>
-      
-    
     <div id="result"></div>
-    <table id="assignment">
-      <tbody>
 
-      </tbody>
-    </table>
-    <button type="button" id="newAssignment">New Assignment</button>
+    <div class="topActions">
+      <button type="button" id="newAssignment">+ New Assignment</button>
+      <button type="button" id="resetToPage" title="Restore Brightspace scores and clear categories, deleted and added assignments">Reset to Page Data</button>
+    </div>
+
+    <section id="weightsCard">
+      <div class="chartWrap">
+        <div id="weightChart"></div>
+        <div id="legend"></div>
+      </div>
+      <div class="top-controls">
+        <button type="button" id="createAssignmentType">+ New category</button>
+        <button type="button" id="clearStorage">Clear categories</button>
+      </div>
+    </section>
+
+    <div id="gradeBox">
+      <h2 id="finalGrade">Current Grade: --%</h2>
+      <div id="gradeNote"></div>
+    </div>
+
+    <div id="categories"></div>
+
+    <section id="unassignedSection">
+      <div class="sectionHeader" id="unassignedHeader"></div>
+      <div class="rowList" id="unassignedList"></div>
+    </section>
+
+    <section id="deletedSection" hidden>
+      <div class="sectionHeader clickable" id="deletedHeader"></div>
+      <div class="rowList" id="deletedList"></div>
+    </section>
+
     <div id="modalOverlay" style="display: none;">
-      <div id = "assignmentModal">
+      <div id="assignmentModal">
         <h3>New Assignment</h3>
-        <label>Assignment Name<input type="text" id="newAssignmentName" placeholder="e.g. Homework 3" maxlength=""></label>
-        <label>Total Points <input type="number" id="newAssignmentTotal" placeholder="e.g. 100"></label>
-        <label>Earned Points <input type="number" id="newAssignmentEarned" placeholder="e.g. 85"></label>
+        <label>Assignment Name (max 40 characters)<input type="text" id="newAssignmentName" placeholder="e.g. Homework 3" maxlength="40"></label>
+        <label>Total Points (max 100,000)<input type="number" id="newAssignmentTotal" placeholder="e.g. 100" min="0" max="100000" step="any"></label>
+        <label>Earned Points <input type="number" id="newAssignmentEarned" placeholder="e.g. 85" min="0" max="100000" step="any"></label>
         <div id="modalButtons">
           <button type="button" id="submitAssignment">Submit</button>
           <button type="button" id="cancelAssignment">Cancel</button>
@@ -46,18 +64,14 @@
         <label>Weight (%)
           <input type="number" id="assignmentWeightModal" placeholder="e.g. 20" min="0" max="100">
         </label>
+        <div id="weightRemaining" class="hint"></div>
         <div id="typeModalButtons">
           <button type="button" id="submitAssignmentType">Submit</button>
           <button type="button" id="cancelAssignmentType">Cancel</button>
         </div>
       </div>
     </div>
-    
-    <h2 id="finalGrade">Current Grade: --%</h2>
-    <div class="buttonGroup">
-      <button type="button" id="calcGrade">Calculate Grade</button>
-      <button type="button" id="saveData">Save</button>
-      <button type="button" id="resetToPage">Reset to Page Data</button>
-    </div>
+
     <script src="popup.js"></script>
   </body>
+</html>
