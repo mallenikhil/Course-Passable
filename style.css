@@ -1,17 +1,10 @@
 :root {
-    --color-1: #E85C41;
-    --color-2: #588BED;
-    --color-3: #9458ED;
-    --color-4: #F04DE5;
-    --color-5: #A1F04D;
-    --color-6: #F0E54D;
-    --color-7: #F09C4D;
-    --color-8: #F04D6E;
-    --color-9: #F0604D;
-    --color-10: #4DF078;
-    --color-11: #734DF0;
-    --color-12: #361F1A;
-    --color-13: #030101;
+    /* Category colors (used for the pie chart, legend and category cards) */
+    --color-1: #004777; /* Yale Blue */
+    --color-2: #a30000; /* Oxblood */
+    --color-3: #ff7700; /* Harvest Orange */
+    --color-4: #efd28d; /* Light Gold */
+    --color-5: #00afb5; /* Tropical Teal */
     --primary: #006fbf; /* Brightspace-ish Blue */
     --accent: #ffba52;  /* Warning/Gold accent */
     --bg: #f4f5f7;
@@ -130,8 +123,6 @@ button:hover {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    max-height: 130px;
-    overflow-y: auto;
 }
 
 .legendChip {
@@ -246,15 +237,39 @@ button:hover {
     user-select: none;
 }
 
+.categoryHeader:hover {
+    background: #f7fbff;
+    border-radius: var(--radius);
+}
+
+/* Dropdown arrow: points right when closed, down when open */
 .chevron {
-    font-size: 10px;
+    display: block;
+    width: 20px;
+    height: 20px;
     color: var(--text-light);
+    transform: rotate(-90deg);
     transition: transform 0.15s;
 }
 
 .category.open .chevron,
 .chevron.openChevron {
-    transform: rotate(90deg);
+    transform: none;
+}
+
+/* Only this button opens/closes a category; the rest of the header selects it */
+.chevronBtn {
+    display: flex;
+    flex-shrink: 0;
+    padding: 2px;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    line-height: 0;
+}
+
+.chevronBtn:hover {
+    background: #e3e5e8;
 }
 
 .catName {
@@ -279,11 +294,17 @@ button:hover {
 }
 
 .catRemove {
-    padding: 0 6px;
+    display: flex;
+    padding: 2px;
     border: none;
     background: none;
     color: var(--text-light);
-    font-size: 13px;
+    line-height: 0;
+}
+
+.catRemove svg {
+    width: 16px;
+    height: 16px;
 }
 
 .catRemove:hover {
@@ -325,23 +346,6 @@ button:hover {
     top: 0;
     z-index: 5;
     background: var(--bg);
-}
-
-.assignTo {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-light);
-}
-
-.assignTo select {
-    max-width: 170px;
-    padding: 3px 4px;
-    font-size: 12px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
 }
 
 .rowList {
@@ -404,28 +408,37 @@ button:hover {
     top: -7px;
     left: -7px;
     z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 18px;
     height: 18px;
     padding: 0;
     border: none;
     border-radius: 50%;
-    background: var(--danger);
-    color: white;
-    font-size: 13px;
-    line-height: 18px;
-    text-align: center;
+    background: var(--card-bg);
+    color: var(--danger);
+    font-size: 14px;
+    line-height: 0;
+}
+
+.cornerBtn svg {
+    width: 18px;
+    height: 18px;
 }
 
 .cornerBtn:hover {
-    background: #b71c1c;
+    background: var(--card-bg);
+    color: #b71c1c;
 }
 
 .cornerBtn.restore {
-    background: #2e7d32;
+    color: #2e7d32;
 }
 
 .cornerBtn.restore:hover {
-    background: #1b5e20;
+    background: var(--card-bg);
+    color: #1b5e20;
 }
 
 /* Deleted assignments stay visible but greyed out */

@@ -42,10 +42,13 @@ After pulling new changes, click the reload icon on the extension's card in `chr
 2. Click the **Course Passable?** icon in your Chrome toolbar
 3. Click **+ New category** and enter a name and weight percentage. The pie chart shows how much of the grade is allocated
    - Example: `Homework` → `20%`, `Midterm` → `30%`, `Final` → `50%`
-4. The popup scrolls to your **Unassigned** assignments. Click a row to add it to the selected category (shift-click selects a range). Use the **Add to** dropdown to switch categories, and expand a category to see what's inside it. Click an assignment inside a category to send it back to Unassigned
+4. The popup scrolls to your **Unassigned** assignments. Click a row to add it to the selected category (shift-click selects a range). Click a category (anywhere except its arrow, or its slice/name in the chart legend) to select it; the selected category has a blue outline. Click a category's arrow to open or close the list of assignments inside it. Click an assignment inside a category to send it back to Unassigned
 5. Your current grade updates automatically. The note under it shows how much of the course weight it is based on
 6. Change any score to try out a "what if" grade
-7. Use the red **×** in the top-left corner of an assignment to delete it. It's greyed out in the **Deleted** section (and ignored in your grade) until you restore it with **↺**
+7. Use the red circled **X** in the top-left corner of an assignment:
+   - Inside a category, it sends the assignment back to **Unassigned**
+   - On an unassigned assignment from Brightspace, it moves it to the greyed-out **Deleted** section (ignored in your grade) until you restore it with the green circled **+** in its top-left corner
+   - On an assignment you added yourself, it deletes it permanently
 8. Use **+ New Assignment** (top of the popup) to add hypothetical future assignments
 9. Changes save automatically. Click **Reset to Page Data** (next to New Assignment) to restore the scores from Brightspace and clear categories, deleted assignments and added assignments
 

@@ -10,14 +10,14 @@ let deletedAssignments = new Set();
 let activeCategory = null;
 let expandedCategories = new Set();
 let deletedOpen = true;
-let count = 1;
 let lastClickedKey = null;
 let courseName = null;
 // key -> { value, base }: scores the user changed on Brightspace-provided assignments.
 // `base` is the original page value, so a reset (or a newly posted grade) can drop the edit.
 let scoreEdits = {};
 
-const COLOR_COUNT = 13;
+// Number of category colors defined as --color-1 ... --color-N in style.css.
+const COLOR_COUNT = 5;
 const SPECIAL_KEYS = ['courseName', 'Order', 'undefined', '_categories'];
 
 // Limits that keep user-entered data (and chrome.storage usage) small.
@@ -147,6 +147,44 @@ function svgEl(tag, attrs = {})
     return node;
 }
 
+// Icon shapes used by iconSvg(): the dropdown arrow, the circled X (delete/remove)
+// and the circled plus (restore).
+const ICONS = {
+    arrow: {
+        viewBox: '0 0 24 24',
+        paths: ['M12.7071 14.7071C12.3166 15.0976 11.6834 15.0976 11.2929 14.7071L6.29289 9.70711C5.90237 9.31658 5.90237 8.68342 6.29289 8.29289C6.68342 7.90237 7.31658 7.90237 7.70711 8.29289L12 12.5858L16.2929 8.29289C16.6834 7.90237 17.3166 7.90237 17.7071 8.29289C18.0976 8.68342 18.0976 9.31658 17.7071 9.70711L12.7071 14.7071Z']
+    },
+    plus: {
+        viewBox: '0 -0.5 17 17',
+        transform: 'translate(1, 0)',
+        paths: [
+            'M8.021,0.114 C3.627,0.114 0.052,3.668 0.052,8.036 C0.052,12.404 3.627,15.958 8.021,15.958 C12.416,15.958 15.99,12.404 15.99,8.036 C15.99,3.668 12.415,0.114 8.021,0.114 L8.021,0.114 Z M8.013,14.07 C4.684,14.07 1.973,11.346 1.973,7.999 C1.973,4.652 4.684,1.928 8.013,1.928 C11.342,1.928 14.052,4.653 14.052,7.999 C14.052,11.347 11.342,14.07 8.013,14.07 L8.013,14.07 Z',
+            'M7.996,11.969 C7.342,11.969 7.037,11.532 7.037,11.238 L7.037,8.983 L4.813,8.983 C4.548,8.983 4.031,8.685 4.031,7.997 C4.031,7.343 4.469,7.038 4.763,7.038 L7.034,7.038 L7.034,4.801 C7.034,4.537 7.332,4.019 8.02,4.019 C8.674,4.019 8.979,4.457 8.979,4.751 L8.979,7.036 L11.215,7.036 C11.48,7.036 11.998,7.335 11.998,8.023 C11.998,8.676 11.56,8.981 11.266,8.981 L8.981,8.981 L8.981,11.187 C8.982,11.45 8.685,11.969 7.996,11.969 L7.996,11.969 Z'
+        ]
+    },
+    x: {
+        viewBox: '0 -0.5 17 17',
+        transform: 'translate(1, 0)',
+        paths: [
+            'M13.646,2.371 C10.535,-0.739 5.469,-0.74 2.358,2.371 C-0.753,5.483 -0.752,10.548 2.358,13.66 C5.469,16.77 10.534,16.771 13.646,13.66 C16.758,10.547 16.757,5.483 13.646,2.371 L13.646,2.371 Z M3.587,12.431 C1.148,9.993 1.146,6.028 3.58,3.594 C6.014,1.159 9.979,1.162 12.418,3.6 C14.856,6.038 14.857,10.004 12.424,12.438 C9.988,14.872 6.024,14.869 3.587,12.431 L3.587,12.431 Z',
+            'M10.164,11.063 C9.982,11.063 9.845,10.991 9.776,10.922 L8.009,9.157 L6.314,10.852 C6.248,10.918 6.095,10.998 5.891,10.998 C5.738,10.998 5.507,10.952 5.288,10.733 C5.067,10.513 5.018,10.295 5.017,10.153 C5.013,9.965 5.086,9.823 5.157,9.753 L6.881,8.028 L5.201,6.35 C5.049,6.197 4.922,5.723 5.321,5.325 C5.546,5.1 5.767,5.053 5.914,5.053 C6.097,5.053 6.234,5.125 6.301,5.194 L8.009,6.9 L9.705,5.204 C9.773,5.137 9.925,5.058 10.129,5.058 C10.283,5.058 10.514,5.104 10.733,5.324 C11.111,5.703 11.035,6.134 10.864,6.304 L9.138,8.03 L10.875,9.766 C10.942,9.834 11.021,9.986 11.021,10.19 C11.021,10.344 10.976,10.573 10.756,10.792 C10.531,11.016 10.311,11.063 10.164,11.063 L10.164,11.063 L10.164,11.063 Z'
+        ]
+    }
+};
+
+// Builds one of the ICONS as an inline SVG that takes its color from the surrounding text color.
+function iconSvg(name, className)
+{
+    const icon = ICONS[name];
+    const svg = svgEl('svg', { viewBox: icon.viewBox, fill: 'currentColor', 'aria-hidden': 'true' });
+    if (className) svg.setAttribute('class', className);
+    const group = svgEl('g', { 'fill-rule': 'evenodd' });
+    if (icon.transform) group.setAttribute('transform', icon.transform);
+    icon.paths.forEach(d => group.appendChild(svgEl('path', { d })));
+    svg.appendChild(group);
+    return svg;
+}
+
 // Rounds a number to 2 decimal places.
 function round2(n)
 {
@@ -163,6 +201,15 @@ function fmt(n)
 function colorVar(colorIndex)
 {
     return `var(--color-${((colorIndex - 1) % COLOR_COUNT) + 1})`;
+}
+
+// Picks the palette color used by the fewest categories (the first one wins ties),
+// so a removed category frees its color and colors only repeat once all are in use.
+function nextColorIndex()
+{
+    const uses = new Array(COLOR_COUNT).fill(0);
+    Object.values(assignments).forEach(c => uses[(c.colorIndex - 1) % COLOR_COUNT]++);
+    return uses.indexOf(Math.min(...uses)) + 1;
 }
 
 // Sum of all category weights (the "allocated" part of the pie chart).
@@ -200,8 +247,7 @@ async function saveDeleted()
     });
 }
 
-// Saves categories (weight, color, assignments) and the color counter to sync storage,
-// and the deleted list to local storage.
+// Saves categories (weight, color, assignments) to sync storage and the deleted list to local storage.
 async function saveGlobalState()
 {
     const name = await getCourseKey();
@@ -213,10 +259,7 @@ async function saveGlobalState()
             assignmentsList: Array.from(typeObj.assignmentsList)
         };
     }
-    await chrome.storage.sync.set({
-        [`_assignments_${name}`]: serialized,
-        [`_count_${name}`]: count
-    });
+    await chrome.storage.sync.set({ [`_assignments_${name}`]: serialized });
     await saveDeleted();
 }
 
@@ -225,32 +268,23 @@ async function saveGlobalState()
 async function restoreGlobalState()
 {
     const name = await getCourseKey();
-    const syncData = await chrome.storage.sync.get([
-        `_assignments_${name}`,
-        `_count_${name}`
-    ]);
+    const syncData = await chrome.storage.sync.get([`_assignments_${name}`]);
     const localData = await chrome.storage.local.get([`_deletedAssignments_${name}`]);
 
     const savedAssignments = syncData[`_assignments_${name}`] || {};
-    const savedCount = syncData[`_count_${name}`];
 
     assignments = {};
     let position = 0;
-    let maxColor = 0;
     for (const [typeName, typeObj] of Object.entries(savedAssignments)) {
         position++;
         // Categories saved before the pie chart existed have no colorIndex.
         const colorIndex = typeof typeObj.colorIndex === 'number' ? typeObj.colorIndex : position;
-        maxColor = Math.max(maxColor, colorIndex);
         assignments[typeName] = {
             weight: parseFloat(typeObj.weight) || 0,
             colorIndex,
             assignmentsList: new Set(Array.isArray(typeObj.assignmentsList) ? typeObj.assignmentsList : [])
         };
     }
-
-    count = savedCount !== undefined ? parseInt(savedCount) : 1;
-    count = Math.max(count, maxColor + 1);
 
     deletedAssignments = new Set(localData[`_deletedAssignments_${name}`] || []);
 }
@@ -581,8 +615,20 @@ function renderCategories()
             + (name === activeCategory ? ' active' : ''));
         card.style.setProperty('--cat-color', colorVar(obj.colorIndex));
 
+        // Clicking the header selects the category; only the arrow opens/closes it.
         const header = el('div', 'categoryHeader');
-        header.appendChild(el('span', 'chevron', '▶'));
+        const toggleBtn = el('button', 'chevronBtn');
+        toggleBtn.type = 'button';
+        toggleBtn.title = isOpen ? 'Hide assignments' : 'Show assignments';
+        toggleBtn.setAttribute('aria-expanded', String(isOpen));
+        toggleBtn.appendChild(iconSvg('arrow', 'chevron'));
+        toggleBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (expandedCategories.has(name)) expandedCategories.delete(name);
+            else expandedCategories.add(name);
+            render();
+        });
+        header.appendChild(toggleBtn);
         header.appendChild(el('span', 'catName', name));
         header.appendChild(el('span', 'catWeight', `${fmt(obj.weight)}%`));
 
@@ -594,21 +640,17 @@ function renderCategories()
         statsNode.appendChild(document.createTextNode(` · ${stats.count} item${stats.count === 1 ? '' : 's'}`));
         header.appendChild(statsNode);
 
-        const removeBtn = el('button', 'catRemove', '✕');
+        const removeBtn = el('button', 'catRemove');
         removeBtn.type = 'button';
         removeBtn.title = 'Remove category';
+        removeBtn.appendChild(iconSvg('x'));
         removeBtn.addEventListener('click', (event) => {
             event.stopPropagation();
             removeCategory(name);
         });
         header.appendChild(removeBtn);
 
-        header.addEventListener('click', () => {
-            activeCategory = name;
-            if (expandedCategories.has(name)) expandedCategories.delete(name);
-            else expandedCategories.add(name);
-            render();
-        });
+        header.addEventListener('click', () => setActiveCategory(name));
         card.appendChild(header);
 
         const body = el('div', 'categoryBody');
@@ -625,7 +667,7 @@ function renderCategories()
     }
 }
 
-// Draws the assignments that have no category, plus the sticky "Add to" category selector.
+// Draws the assignments that have no category under a sticky "Unassigned (n)" header.
 function renderUnassigned()
 {
     const header = document.getElementById('unassignedHeader');
@@ -636,24 +678,7 @@ function renderUnassigned()
     const keys = rowOrder.filter(key => !deletedAssignments.has(key) && categoryOf(key) === null);
     header.appendChild(el('span', 'sectionTitle', `Unassigned (${keys.length})`));
 
-    const names = Object.keys(assignments);
-    if (names.length > 0) {
-        const label = el('label', 'assignTo');
-        label.appendChild(document.createTextNode('Add to'));
-        const dot = el('span', 'dot');
-        dot.style.background = colorVar(assignments[activeCategory].colorIndex);
-        label.appendChild(dot);
-        const select = el('select');
-        for (const name of names) {
-            const option = el('option', '', `${name} (${fmt(assignments[name].weight)}%)`);
-            option.value = name;
-            option.selected = name === activeCategory;
-            select.appendChild(option);
-        }
-        select.addEventListener('change', () => setActiveCategory(select.value));
-        label.appendChild(select);
-        header.appendChild(label);
-    } else {
+    if (Object.keys(assignments).length === 0) {
         header.appendChild(el('span', 'hint', 'Create a category first'));
     }
 
@@ -680,7 +705,7 @@ function renderDeleted()
     if (keys.length === 0) return;
 
     header.appendChild(el('span', 'sectionTitle', `Deleted (${keys.length})`));
-    header.appendChild(el('span', 'chevron' + (deletedOpen ? ' openChevron' : ''), '▶'));
+    header.appendChild(iconSvg('arrow', 'chevron' + (deletedOpen ? ' openChevron' : '')));
     list.hidden = !deletedOpen;
     keys.forEach(key => list.appendChild(buildRow(key, 'deleted')));
 }
@@ -693,12 +718,20 @@ function buildRow(key, mode)
     const row = el('div', 'assignmentRow' + (isDeleted ? ' deleted' : ' clickable'));
     row.dataset.key = key;
 
-    const cornerBtn = el('button', 'cornerBtn' + (isDeleted ? ' restore' : ''), isDeleted ? '↺' : '×');
+    const cornerBtn = el('button', 'cornerBtn' + (isDeleted ? ' restore' : ''));
+    cornerBtn.appendChild(iconSvg(isDeleted ? 'plus' : 'x'));
     cornerBtn.type = 'button';
-    cornerBtn.title = isDeleted ? 'Restore assignment' : 'Delete assignment';
+    // What the corner button does depends on where the assignment is and who created it.
+    if (isDeleted) cornerBtn.title = 'Restore assignment';
+    else if (info.manual) cornerBtn.title = 'Delete assignment permanently';
+    else if (mode === 'category') cornerBtn.title = 'Remove from category';
+    else cornerBtn.title = 'Delete assignment';
     cornerBtn.addEventListener('click', (event) => {
         event.stopPropagation();
-        toggleDeleted(key);
+        if (isDeleted) toggleDeleted(key);
+        else if (info.manual) deleteManualAssignment(key);
+        else if (mode === 'category') unassignKey(key);
+        else toggleDeleted(key);
     });
     row.appendChild(cornerBtn);
 
@@ -747,27 +780,56 @@ async function handleRowClick(event, key, mode)
     if (event.target.closest('input, button')) return;
 
     if (mode === 'category') {
-        // Clicking an assignment inside a category sends it back to Unassigned.
-        const name = categoryOf(key);
-        if (name) assignments[name].assignmentsList.delete(key);
-        lastClickedKey = null;
-    } else {
-        if (!activeCategory) return;
-        let keys = [key];
-        if (event.shiftKey && lastClickedKey && lastClickedKey !== key) {
-            const a = rowOrder.indexOf(lastClickedKey);
-            const b = rowOrder.indexOf(key);
-            if (a !== -1 && b !== -1) {
-                keys = rowOrder
-                    .slice(Math.min(a, b), Math.max(a, b) + 1)
-                    .filter(k => !deletedAssignments.has(k) && categoryOf(k) === null);
-            }
-        }
-        assignKeys(keys, activeCategory);
-        lastClickedKey = key;
+        await unassignKey(key);
+        return;
     }
 
+    if (!activeCategory) return;
+    let keys = [key];
+    if (event.shiftKey && lastClickedKey && lastClickedKey !== key) {
+        const a = rowOrder.indexOf(lastClickedKey);
+        const b = rowOrder.indexOf(key);
+        if (a !== -1 && b !== -1) {
+            keys = rowOrder
+                .slice(Math.min(a, b), Math.max(a, b) + 1)
+                .filter(k => !deletedAssignments.has(k) && categoryOf(k) === null);
+        }
+    }
+    assignKeys(keys, activeCategory);
+    lastClickedKey = key;
+
     render();
+    await saveGlobalState();
+}
+
+// Takes an assignment out of its category and puts it back in Unassigned.
+async function unassignKey(key)
+{
+    const name = categoryOf(key);
+    if (name) assignments[name].assignmentsList.delete(key);
+    lastClickedKey = null;
+    render();
+    await saveGlobalState();
+}
+
+// Permanently removes an assignment the user created: from storage, its category and the deleted list.
+async function deleteManualAssignment(key)
+{
+    const name = await getCourseKey();
+    delete rowData[key];
+    rowOrder = rowOrder.filter(k => k !== key);
+    delete allAssignments[key];
+    Object.values(assignments).forEach(a => a.assignmentsList.delete(key));
+    deletedAssignments.delete(key);
+    if (lastClickedKey === key) lastClickedKey = null;
+    render();
+
+    const data = await chrome.storage.local.get('_manualAssignments');
+    const manual = data._manualAssignments || {};
+    if (manual[name]) {
+        delete manual[name][key];
+        await chrome.storage.local.set({ _manualAssignments: manual });
+    }
     await saveGlobalState();
 }
 
@@ -854,10 +916,9 @@ function createAssignmentType()
 
         assignments[assignmentType] = {
             weight,
-            colorIndex: count,
+            colorIndex: nextColorIndex(),
             assignmentsList: new Set()
         };
-        count++;
         activeCategory = assignmentType;
         modalOverlay.style.display = 'none';
         render();
@@ -880,7 +941,6 @@ function createAssignmentType()
         assignments = {};
         activeCategory = null;
         expandedCategories.clear();
-        count = 1;
         lastClickedKey = null;
         render();
         await saveGlobalState();
@@ -913,7 +973,6 @@ async function resetToPageData()
     deletedAssignments = new Set();
     activeCategory = null;
     expandedCategories.clear();
-    count = 1;
     lastClickedKey = null;
     await saveGlobalState();
 
